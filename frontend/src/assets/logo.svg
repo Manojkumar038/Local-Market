@@ -1,0 +1,17 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background is transparent -->
+  <!-- Pin + handle -->
+  <path d="M512 144c-141 0-256 114-256 255.5 0 79.7 36.6 147.9 104 237.7 38.4 50.4 88.1 108.4 143.9 178.7 15.6 19.4 45.7 19.4 61.3 0 55.8-70.3 105.5-128.3 143.9-178.7 67.4-89.8 104-158 104-237.7C768 258 653 144 512 144z" fill="#22C55E"/>
+  <!-- Inner circle accent (pin marker) -->
+  <circle cx="512" cy="400" r="72" fill="#F59E0B"/>
+  <!-- Basket body -->
+  <rect x="320" y="560" width="384" height="200" rx="24" fill="#111827"/>
+  <!-- Basket slats -->
+  <rect x="368" y="592" width="24" height="136" rx="12" fill="#F3F4F6" opacity="0.85"/>
+  <rect x="432" y="592" width="24" height="136" rx="12" fill="#F3F4F6" opacity="0.85"/>
+  <rect x="496" y="592" width="24" height="136" rx="12" fill="#F3F4F6" opacity="0.85"/>
+  <rect x="560" y="592" width="24" height="136" rx="12" fill="#F3F4F6" opacity="0.85"/>
+  <rect x="624" y="592" width="24" height="136" rx="12" fill="#F3F4F6" opacity="0.85"/>
+  <!-- Handle (ties pin to basket) -->
+  <path d="M416 544c0-53 43-96 96-96s96 43 96 96" stroke="#111827" stroke-width="24" stroke-linecap="round" fill="none"/>
+</svg>
