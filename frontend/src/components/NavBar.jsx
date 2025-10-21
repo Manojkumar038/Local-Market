@@ -1,26 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import "../styles/navbar.css";
-import logo from '../assets/logo.svg';
-import userProfileIcon from '../assets/userProfileIcon.svg';
+import logo from "../assets/logo.svg";
+import userProfileIcon from "../assets/userProfileIcon.svg";
 
-
-export default function NavBar() {
+export default function NavBar({ links = [], menuItems = [] }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
 
-  // Close on outside click
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (!menuRef.current) return;
-      if (!btnRef.current) return;
+      if (!menuRef.current || !btnRef.current) return;
       const clickedInsideMenu = menuRef.current.contains(e.target);
       const clickedButton = btnRef.current.contains(e.target);
       if (!clickedInsideMenu && !clickedButton) setOpen(false);
     };
+
     const onEscape = (e) => {
       if (e.key === "Escape") setOpen(false);
     };
+
     document.addEventListener("mousedown", onClickOutside);
     document.addEventListener("keydown", onEscape);
     return () => {
@@ -67,30 +66,29 @@ export default function NavBar() {
             role="menu"
             aria-label="Profile menu"
           >
-            <a
-              href="/profile"
-              role="menuitem"
-              tabIndex={0}
-              className="menu-item"
-            >
-              Profile
-            </a>
-            <a
-              href="/settings"
-              role="menuitem"
-              tabIndex={0}
-              className="menu-item"
-            >
-              Settings
-            </a>
-            <button
-              role="menuitem"
-              tabIndex={0}
-              className="menu-item danger"
-              onClick={() => alert("Logout")}
-            >
-              Logout
-            </button>
+            {menuItems.map((item, index) =>
+              item.href ? (
+                <a
+                  key={index}
+                  href={item.href}
+                  role="menuitem"
+                  tabIndex={0}
+                  className={`menu-item ${item.className || ""}`}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={index}
+                  onClick={item.onClick}
+                  role="menuitem"
+                  tabIndex={0}
+                  className={`menu-item ${item.className || ""}`}
+                >
+                  {item.label}
+                </button>
+              )
+            )}
           </div>
         )}
       </div>

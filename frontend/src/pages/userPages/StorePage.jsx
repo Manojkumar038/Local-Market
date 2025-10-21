@@ -1,5 +1,5 @@
 import React from "react";
-import defaultStores from "../data/store.js";
+import defaultStores from "../../data/store.js";
 
 function makeSvgDataUri(svgString) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;

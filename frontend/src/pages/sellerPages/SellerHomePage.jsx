@@ -1,0 +1,258 @@
+import React, { useState, useEffect, useRef } from "react";
+import defaultStores from "../../data/store.js";
+import Navbar from "../../components/Navbar";
+
+function makeSvgDataUri(svgString) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
+}
+
+const products = [
+  {
+    id: 1,
+    name: "Oak Side Table",
+    price: "$129",
+    image: makeSvgDataUri(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='#fff7f0'/><rect x='120' y='140' width='560' height='300' rx='12' fill='#d6eadf'/><text x='50%' y='85%' text-anchor='middle' fill='#163534' font-size='28'>Oak Side Table</text></svg>`
+    ),
+    note: "Compact, hand-finished oak side table.",
+  },
+  {
+    id: 2,
+    name: "Handwoven Basket",
+    price: "$45",
+    image: makeSvgDataUri(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='#f0fff8'/><circle cx='400' cy='260' r='160' fill='#f6e7d9'/><text x='50%' y='85%' text-anchor='middle' fill='#163534' font-size='28'>Handwoven Basket</text></svg>`
+    ),
+    note: "Perfect for blankets and storage.",
+  },
+  {
+    id: 3,
+    name: "Ceramic Mug",
+    price: "$18",
+    image: makeSvgDataUri(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='#fffaf6'/><ellipse cx='400' cy='260' rx='160' ry='120' fill='#cfe7e0'/><text x='50%' y='85%' text-anchor='middle' fill='#163534' font-size='28'>Ceramic Mug</text></svg>`
+    ),
+    note: "Hand-thrown, dishwasher safe.",
+  },
+];
+
+export default function StorePage({ store = defaultStores[0] }) {
+  const [items, setItems] = useState(products);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  function handleManage(product) {
+    // replace with navigation/modal integration
+    alert(`Manage "${product.name}" (id: ${product.id})`);
+    setOpenMenuId(null);
+  }
+
+  function handleDelete(id) {
+    if (!window.confirm("Delete this product?")) {
+      setOpenMenuId(null);
+      return;
+    }
+    setItems((prev) => prev.filter((p) => p.id !== id));
+    setOpenMenuId(null);
+  }
+
+  return (
+    <>
+      <Navbar
+        menuItems={[
+          { label: "Profile", href: "/profile" },
+          { label: "Add Products", href: "/add-product" },
+          { label: "My Orders", href: "/orders" },
+          { label: "Settings", href: "/settings" },
+          {
+            label: "Logout",
+            onClick: () => alert("Logging out..."),
+            className: "danger",
+          },
+        ]}
+      />
+      <header
+        className="store-hero"
+        role="banner"
+        style={{
+          backgroundImage: `url("${store.image}")`,
+        }}
+      >
+        <div className="store-hero__overlay">
+          <h1 className="store-title">{store.name}</h1>
+          <p className="store-note">{store.note}</p>
+        </div>
+      </header>
+
+      <section className="products-section" aria-label="Products">
+        <h2 className="section-heading">Products</h2>
+        <div className="products-grid" ref={containerRef}>
+          {items.map((p) => (
+            <article key={p.id} className="product-card" tabIndex={0}>
+              <div className="product-media">
+                <img src={p.image} alt={p.name} />
+              </div>
+              <div className="product-body">
+                <div className="product-top">
+                  <h3 className="product-name">{p.name}</h3>
+                  <span className="product-price">{p.price}</span>
+                </div>
+                <p className="product-note">{p.note}</p>
+              </div>
+
+              <div className="card-actions">
+                <button
+                  className="kebab-btn"
+                  aria-haspopup="true"
+                  aria-expanded={openMenuId === p.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenuId((cur) => (cur === p.id ? null : p.id));
+                  }}
+                >
+                  <span className="dots">⋮</span>
+                </button>
+
+                {openMenuId === p.id && (
+                  <div
+                    className="kebab-menu"
+                    role="menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="menu-item"
+                      onClick={() => handleManage(p)}
+                    >
+                      Manage
+                    </button>
+                    <button
+                      className="menu-item danger"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      Delete Product
+                    </button>
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <style>{`
+
+        .store-page { font-family: "Segoe UI", Arial, sans-serif; color: #a4d5d1ff; padding-bottom: 48px; }
+        .store-hero {
+          height: 320px;
+          background-size: cover;
+          background-position: center;
+          display: flex;
+          align-items: flex-end;
+          position: relative;
+          border-bottom-left-radius: 18px;
+          border-bottom-right-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 8px 28px rgba(11,95,255,0.06);
+        }
+        .store-hero__overlay {
+          width: 100%;
+          background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.92) 70%);
+          padding: 20px 28px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .store-title { margin: 0; font-size: 28px; font-weight: 700; color: #252828ff; }
+        .store-note { margin: 0; color: #111615ff; opacity: 0.9; max-width: 900px; font-size: 16px; }
+
+        .products-section { max-width: 1100px; margin: 22px auto; padding: 0 18px; }
+        .section-heading { margin: 0 0 12px 0; font-size: 18px; color: #0e3b36; }
+
+        .product-card { position: relative; }
+        .card-actions {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 4;
+        }
+         .kebab-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 20px;
+          font-weight: 600;
+        }
+
+        .kebab-btn:active { transform: translateY(1px); }
+        .kebab-menu {
+          margin-top: 8px;
+          right: 0;
+          position: absolute;
+          background: #f2f1f1ff;
+          border-radius: 8px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+          flex-direction: column;
+          min-width: 150px;
+          overflow: hidden;
+        }
+        .kebab-menu .menu-item {
+          padding: 10px 12px;
+          text-align: left;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          color: #163534;
+        }
+        .kebab-menu .menu-item:hover { background: #f5f7f6; }
+        .kebab-menu .menu-item.danger { color: #d23; }
+
+        .products-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
+        .product-card {
+          background: #fff;
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+          display: flex;
+          flex-direction: column;
+          transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+        .product-media img { width: 100%; height: 130px; object-fit: cover; display: block; background: #e2bbbbff; }
+        .product-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .product-top { display:flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+        .product-name { margin: 0; font-size: 15px; font-weight: 600; color: #163534; }
+        .product-price { font-weight: 700; color: #0b5fff; }
+        .product-note { margin: 0; color: #55615f; font-size: 13px; }
+
+        @media (max-width: 900px) {
+          .products-grid { grid-template-columns: repeat(2, 1fr); }
+          .store-hero { height: 260px; }
+        }
+        @media (max-width: 600px) {
+          .products-grid { grid-template-columns: 1fr; }
+          .store-hero { height: 220px; }
+          .store-title { font-size: 20px; }
+        }
+      `}</style>
+    </>
+  );
+}

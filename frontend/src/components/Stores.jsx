@@ -27,7 +27,7 @@ export default function Stores({ stores = defaultStores }) {
       </div>
 
       <style>{`
-        .stores-section { padding: 18px; max-width: 1200px; margin: 0 auto; }
+        .stores-section { padding: 18px; max-width: 1200px; margin: 0 auto;}
         .stores-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
         .store-card {
           background: #dbeceaff;
