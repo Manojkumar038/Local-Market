@@ -1,8 +1,11 @@
-import React, { useState } from "react";
- import "../../styles/AddProducts.css";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import "../../styles/ManageProduct.css";
 
-const AddProductPage = () => {
+const ManageProduct = () => {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+
   const [productData, setProductData] = useState({
     name: "",
     price: "",
@@ -11,19 +14,43 @@ const AddProductPage = () => {
     images: [],
   });
 
-  const navigate = useNavigate();
-
   const [previewImages, setPreviewImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch product data when component mounts
+    const fetchProductData = async () => {
+      try {
+        // TODO: Replace with your actual API call
+        const response = await fetch(`/api/products/${productId}`);
+        const data = await response.json();
+        setProductData(data);
+        setPreviewImages(data.images); // Assuming images are URLs
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductData();
+  }, [productId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProductData((prev) => ({ ...prev, [name]: value }));
+    setProductData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleHighlightChange = (index, field, value) => {
     const newHighlights = [...productData.highlights];
     newHighlights[index][field] = value;
-    setProductData((prev) => ({ ...prev, highlights: newHighlights }));
+    setProductData((prev) => ({
+      ...prev,
+      highlights: newHighlights,
+    }));
   };
 
   const addHighlight = () => {
@@ -56,28 +83,46 @@ const AddProductPage = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
-
     URL.revokeObjectURL(previewImages[index]);
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("name", productData.name);
-    formData.append("price", productData.price);
-    formData.append("description", productData.description);
-    productData.images.forEach((image) => formData.append("images", image));
-    formData.append("highlights", JSON.stringify(productData.highlights));
+    try {
+      const formData = new FormData();
+      formData.append("name", productData.name);
+      formData.append("price", productData.price);
+      formData.append("description", productData.description);
+      productData.images.forEach((image) => {
+        if (image instanceof File) {
+          formData.append("images", image);
+        }
+      });
+      formData.append("highlights", JSON.stringify(productData.highlights));
 
-    console.log("Submitting product:", productData);
-    alert("Product submitted (check console)");
+      // TODO: Replace with your actual API call
+      await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        body: formData,
+      });
+
+      alert("Product updated successfully!");
+      navigate("/seller/products");
+    } catch (error) {
+      console.error("Error updating product:", error);
+      alert("Failed to update product");
+    }
   };
 
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
+
   return (
-    <div className="add-product-container">
-      <div className="add-product-form">
+    <div className="manage-product-container">
+      <div className="manage-product-form">
         <button
           type="button"
           className="abort-btn"
@@ -86,9 +131,9 @@ const AddProductPage = () => {
         >
           ×
         </button>
-        <h2 className="heading">Add New Product</h2>
+        <h2 className="heading">Edit Product Details</h2>
+
         <form onSubmit={handleSubmit}>
-          {/* Product Name */}
           <div className="form-group">
             <label htmlFor="name">Product Name</label>
             <input
@@ -101,7 +146,6 @@ const AddProductPage = () => {
             />
           </div>
 
-          {/* Product Price */}
           <div className="form-group">
             <label htmlFor="price">Price</label>
             <input
@@ -114,7 +158,6 @@ const AddProductPage = () => {
             />
           </div>
 
-          {/* Product Description */}
           <div className="form-group">
             <label htmlFor="description">Description</label>
             <textarea
@@ -127,7 +170,6 @@ const AddProductPage = () => {
             />
           </div>
 
-          {/* Product Highlights */}
           <div className="form-group">
             <label>Product Highlights</label>
             <div className="highlights-container">
@@ -168,9 +210,8 @@ const AddProductPage = () => {
             </button>
           </div>
 
-          {/* Product Images */}
           <div className="form-group">
-            <label>Product Images</label>
+            <label>Update Product Images</label>
             <input
               type="file"
               accept="image/*"
@@ -195,7 +236,7 @@ const AddProductPage = () => {
           </div>
 
           <button type="submit" className="submit-btn">
-            Add Product
+            Update Product
           </button>
         </form>
       </div>
@@ -203,4 +244,4 @@ const AddProductPage = () => {
   );
 };
 
-export default AddProductPage;
+export default ManageProduct;

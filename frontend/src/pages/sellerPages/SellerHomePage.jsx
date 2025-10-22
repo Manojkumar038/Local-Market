@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import defaultStores from "../../data/store.js";
-import Navbar from "../../components/Navbar";
+import NavBar from "../../components/NavBar";
 
 function makeSvgDataUri(svgString) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
@@ -41,6 +41,16 @@ export default function StorePage({ store = defaultStores[0] }) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const containerRef = useRef(null);
 
+  // Local editable store state (name, note, banner url)
+  const [storeData, setStoreData] = useState({
+    name: store.name || "Green Home",
+    note: store.note || "",
+    image: store.image || "",
+  });
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState(storeData);
+
   useEffect(() => {
     function onDocClick(e) {
       if (!containerRef.current) return;
@@ -48,12 +58,11 @@ export default function StorePage({ store = defaultStores[0] }) {
         setOpenMenuId(null);
       }
     }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
   }, []);
 
   function handleManage(product) {
-    // replace with navigation/modal integration
     alert(`Manage "${product.name}" (id: ${product.id})`);
     setOpenMenuId(null);
   }
@@ -67,9 +76,23 @@ export default function StorePage({ store = defaultStores[0] }) {
     setOpenMenuId(null);
   }
 
+  // Edit dialog handlers
+  const openEditor = () => {
+    setDraft(storeData);
+    setEditOpen(true);
+  };
+  const closeEditor = () => setEditOpen(false);
+  const saveEditor = (e) => {
+    e.preventDefault();
+    setStoreData(draft);
+    setEditOpen(false);
+    // TODO: call API to persist changes
+    // await fetch('/api/store', { method:'PUT', body: JSON.stringify(draft) })
+  };
+
   return (
     <>
-      <Navbar
+      <NavBar
         menuItems={[
           { label: "Profile", href: "/profile" },
           { label: "Add Products", href: "/add-product" },
@@ -82,16 +105,30 @@ export default function StorePage({ store = defaultStores[0] }) {
           },
         ]}
       />
+
       <header
         className="store-hero"
         role="banner"
         style={{
-          backgroundImage: `url("${store.image}")`,
+          backgroundImage: `url("${storeData.image}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <div className="store-hero__overlay">
-          <h1 className="store-title">{store.name}</h1>
-          <p className="store-note">{store.note}</p>
+          <div className="store-title-row">
+            <h1 className="store-title">{storeData.name}</h1>
+            <button
+              className="edit-btn"
+              aria-label="Edit store details"
+              onClick={openEditor}
+              title="Edit store"
+            >
+              ✏️
+            </button>
+          </div>
+          <p className="store-note">{storeData.note}</p>
         </div>
       </header>
 
@@ -103,6 +140,7 @@ export default function StorePage({ store = defaultStores[0] }) {
               <div className="product-media">
                 <img src={p.image} alt={p.name} />
               </div>
+
               <div className="product-body">
                 <div className="product-top">
                   <h3 className="product-name">{p.name}</h3>
@@ -116,6 +154,7 @@ export default function StorePage({ store = defaultStores[0] }) {
                   className="kebab-btn"
                   aria-haspopup="true"
                   aria-expanded={openMenuId === p.id}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpenMenuId((cur) => (cur === p.id ? null : p.id));
@@ -128,14 +167,16 @@ export default function StorePage({ store = defaultStores[0] }) {
                   <div
                     className="kebab-menu"
                     role="menu"
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
+                    <a
                       className="menu-item"
-                      onClick={() => handleManage(p)}
+                      href="/manage-product"
+                      style={{ textDecoration: "none", display: "block" }}
                     >
                       Manage
-                    </button>
+                    </a>
                     <button
                       className="menu-item danger"
                       onClick={() => handleDelete(p.id)}
@@ -150,13 +191,82 @@ export default function StorePage({ store = defaultStores[0] }) {
         </div>
       </section>
 
-      <style>{`
+      {/* Edit sheet modal */}
+      {editOpen && (
+        <div className="sheet-backdrop" onClick={closeEditor}>
+          <div
+            className="sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editStoreHeading"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="editStoreHeading" className="sheet-title">
+              Edit store
+            </h3>
+            <form onSubmit={saveEditor} className="sheet-form">
+              <div className="f">
+                <label htmlFor="sname">Name</label>
+                <input
+                  id="sname"
+                  type="text"
+                  value={draft.name}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, name: e.target.value }))
+                  }
+                  required
+                />
+              </div>
 
-        .store-page { font-family: "Segoe UI", Arial, sans-serif; color: #a4d5d1ff; padding-bottom: 48px; }
+              <div className="f">
+                <label htmlFor="snote">Note</label>
+                <textarea
+                  id="snote"
+                  rows={3}
+                  value={draft.note}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, note: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="f">
+                <label htmlFor="sbanner">Banner image URL</label>
+                <input
+                  id="sbanner"
+                  type="url"
+                  placeholder="https://…/banner.svg"
+                  value={draft.image}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, image: e.target.value }))
+                  }
+                />
+                <small className="hint">
+                  Use an SVG or a large image for crisp rendering.
+                </small>
+              </div>
+
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn light"
+                  onClick={closeEditor}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn primary">
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .store-page { font-family: "Segoe UI", Arial, sans-serif; color: #0e3b36; padding-bottom: 48px; }
         .store-hero {
           height: 320px;
-          background-size: cover;
-          background-position: center;
           display: flex;
           align-items: flex-end;
           position: relative;
@@ -173,60 +283,23 @@ export default function StorePage({ store = defaultStores[0] }) {
           flex-direction: column;
           gap: 6px;
         }
+        .store-title-row { display: flex; align-items: center; gap: 10px; }
         .store-title { margin: 0; font-size: 28px; font-weight: 700; color: #252828ff; }
+        .edit-btn {
+          border: none; background: #f1f4f7ff; color: #0f172a;
+          width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .edit-btn:hover { background: #e2e8f0; }
+
         .store-note { margin: 0; color: #111615ff; opacity: 0.9; max-width: 900px; font-size: 16px; }
 
         .products-section { max-width: 1100px; margin: 22px auto; padding: 0 18px; }
         .section-heading { margin: 0 0 12px 0; font-size: 18px; color: #0e3b36; }
 
-        .product-card { position: relative; }
-        .card-actions {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          z-index: 4;
-        }
-         .kebab-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          border: none;
-          background: transparent;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 20px;
-          font-weight: 600;
-        }
-
-        .kebab-btn:active { transform: translateY(1px); }
-        .kebab-menu {
-          margin-top: 8px;
-          right: 0;
-          position: absolute;
-          background: #f2f1f1ff;
-          border-radius: 8px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-          flex-direction: column;
-          min-width: 150px;
-          overflow: hidden;
-        }
-        .kebab-menu .menu-item {
-          padding: 10px 12px;
-          text-align: left;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          color: #163534;
-        }
-        .kebab-menu .menu-item:hover { background: #f5f7f6; }
-        .kebab-menu .menu-item.danger { color: #d23; }
-
         .products-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
         .product-card {
+          position: relative;
           background: #fff;
           border-radius: 10px;
           overflow: hidden;
@@ -243,6 +316,61 @@ export default function StorePage({ store = defaultStores[0] }) {
         .product-price { font-weight: 700; color: #0b5fff; }
         .product-note { margin: 0; color: #55615f; font-size: 13px; }
 
+        .card-actions { position: absolute; top: 10px; right: 10px; z-index: 4; }
+        .kebab-btn {
+          width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent;
+          display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+          font-size: 20px; font-weight: 600;
+        }
+        .kebab-btn:active { transform: translateY(1px); }
+        .kebab-menu {
+          position: absolute; right: 0; margin-top: 8px; background: #f2f1f1ff; border-radius: 8px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12); display: flex; flex-direction: column;
+          min-width: 160px; overflow: hidden; z-index: 10;
+        }
+        .kebab-menu .menu-item {
+          padding: 10px 12px; text-align: left; background: transparent; border: none; cursor: pointer;
+          font-size: 14px; font-weight: 500; color: #163534;
+        }
+        .kebab-menu .menu-item:hover { background: #f5f7f6; }
+        .kebab-menu .menu-item.danger { color: #d23; }
+
+        /* Edit sheet modal */
+        .sheet-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.4);
+          display: grid;
+          place-items: center;        /* center vertically and horizontally */
+          z-index: 50;
+        }
+
+        .sheet {
+          width: 100%;
+          max-width: 700px;           /* adjust as needed */
+          background: #fff;
+          border-radius: 16px;        /* full rounded corners when centered */
+          padding: 20px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+          transform: translateY(0);   /* ensure no offset */
+        }
+        .sheet-title { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #0f172a; }
+        .sheet-form { display: grid; gap: 12px; }
+        .f { display: grid; gap: 6px; }
+        label { font-size: 13px; color: #334155; }
+        input, textarea {
+
+          padding: 10px 12px; width: 90%; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; outline: none;
+        }
+        input:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+        .hint { color: #64748b; font-size: 12px; }
+        .actions { margin-top: 4px; display: flex; gap: 10px; justify-content: flex-end; }
+        .btn { padding: 10px 12px; border-radius: 10px; font-weight: 500; cursor: pointer; border: 0; }
+        .btn.light { background: #f1f5f9; color: #0f172a; }
+        .btn.light:hover { background: #e2e8f0; }
+        .btn.primary { background: #61d9d1ff; color: #f5f5f5ff; }
+        .btn.primary:active { transform: translateY(1px); }
+
         @media (max-width: 900px) {
           .products-grid { grid-template-columns: repeat(2, 1fr); }
           .store-hero { height: 260px; }
@@ -252,6 +380,7 @@ export default function StorePage({ store = defaultStores[0] }) {
           .store-hero { height: 220px; }
           .store-title { font-size: 20px; }
         }
+          
       `}</style>
     </>
   );

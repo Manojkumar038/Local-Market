@@ -1,5 +1,7 @@
 import React from "react";
 import defaultStores from "../../data/store.js";
+import banner from "../../assets/banner.svg";
+
 
 function makeSvgDataUri(svgString) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
@@ -51,7 +53,9 @@ export default function StorePage({ store = defaultStores[0] }) {
         className="store-hero"
         role="banner"
         style={{
-          backgroundImage: `url("${store.image}")`,
+          backgroundImage: `url(${store.banner || banner})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         <div className="store-hero__overlay">

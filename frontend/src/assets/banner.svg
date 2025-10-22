@@ -1,0 +1,59 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="100%"
+  height="120"
+  viewBox="0 0 1600 120"
+  preserveAspectRatio="xMidYMid slice"
+  role="img"
+  aria-label="Store banner"
+>
+  <defs>
+    <!-- Gradient background (soft peach to light cream) -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F8DCCB" />
+      <stop offset="50%" stop-color="#F6E6D8" />
+      <stop offset="100%" stop-color="#F3E9DD" />
+    </linearGradient>
+
+    <!-- Subtle confetti colors inspired by the workshop art -->
+    <linearGradient id="accent1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C9AFF" />
+      <stop offset="100%" stop-color="#6FD0FF" />
+    </linearGradient>
+    <linearGradient id="accent2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A65" />
+      <stop offset="100%" stop-color="#FFB74D" />
+    </linearGradient>
+    <linearGradient id="accent3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#81C784" />
+      <stop offset="100%" stop-color="#AED581" />
+    </linearGradient>
+    <linearGradient id="accent4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#BA68C8" />
+      <stop offset="100%" stop-color="#CE93D8" />
+    </linearGradient>
+
+    <!-- Soft noise-like overlay using transparent stripes -->
+    <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="transparent"/>
+      <rect x="0" y="0" width="1" height="6" fill="rgba(0,0,0,0.025)"/>
+      <rect x="3" y="0" width="1" height="6" fill="rgba(0,0,0,0.02)"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1600" height="120" fill="url(#bg)"/>
+
+  <!-- Minimal decorative shapes (kept subtle for a “plain” banner) -->
+  <circle cx="120" cy="30" r="18" fill="url(#accent1)" opacity="0.25"/>
+  <rect x="210" y="70" width="60" height="14" rx="7" fill="url(#accent2)" opacity="0.25"/>
+  <circle cx="320" cy="52" r="8" fill="url(#accent3)" opacity="0.3"/>
+  <rect x="380" y="28" width="40" height="10" rx="5" fill="url(#accent4)" opacity="0.25"/>
+
+  <circle cx="1480" cy="28" r="16" fill="url(#accent2)" opacity="0.22"/>
+  <rect x="1380" y="72" width="56" height="14" rx="7" fill="url(#accent1)" opacity="0.25"/>
+  <circle cx="1288" cy="54" r="7" fill="url(#accent4)" opacity="0.28"/>
+
+  <!-- Very light texture overlay -->
+  <rect x="0" y="0" width="1600" height="120" fill="url(#grain)" opacity="0.3"/>
+</svg>
