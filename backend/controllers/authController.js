@@ -1,86 +1,105 @@
-import Seller from '../models/seller.js';
+import bcrytp from 'bcryptjs'; 
+import jwt from 'jsonwebtoken'; 
+import mailgun from 'mailgun-js';
+import dotenv from 'dotenv';
+dotenv.config({ path: `.env.development`, quiet: true });
+import PendingUser from '../models/temp.js';
 import User from '../models/user.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
-const googleLoginSeller = async (req, res) => {
-    const {name, email } = req.body;
+const mg = mailgun({
+    apiKey: process.env.MAILGUN_API_KEY,
+    domain: process.env.MAILGUN_DOMAIN,
+});
 
-    if(!name || !email) {
-        return res.status(400).json({message: 'Login failed please try again. authController.js'})
-    }
 
+export const registerUser = async (req, res) => {
     try {
-        var seller =  await Seller.findOne({ email });
 
-        if(!seller) {
-            //Send additonal data collection fields for phone , store Name and address details. 
-            seller = new Seller({ name, email});
-            await seller.save();
-
-            const token = jwt.sign(
-                {
-                    email: email,
-                    sellerId: seller._id
-                },
-                process.env.SECRET_KEY,
-            );
-
-            res.json({
-                token,
-                seller: {
-                    id: seller._id,
-                    name: seller.name,
-                    email: seller.email,
-                    picture: seller.picture || null,
-                },
-                message: "Login successful"
-            });
+        const { name, email, password } = req.body;
+        const user = await User.findOne({email});
+        if(user) {
+            return res.status(400).json({message: "User already exists..Please Login."});
         }
+
+        const hashedPassword = await bcrytp.hash(password, 10);
+        console.log(`From ${__filename} \n Hashed Password: ` + hashedPassword);
+
+        const token = jwt.sign(
+            {
+                email: email,
+            },
+            process.env.SECRET_KEY,
+            { expiresIn: "4m" }
+        );
+        
+        const pendingUser = new PendingUser({
+            name, email, password: hashedPassword, token
+        });
+
+        await pendingUser.save();
+
+        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+
+        const mailOptions = {
+            from: "Verify <noreply@ledger>",
+            to: email,
+            subject: "Verify your Identity for entering into the Local Market!!",
+            text: `Click the link to log in:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
+        };
+
+        await mg.messages().send(mailOptions);
+
+        res.status(200).json({message: `SignUp Sucessfull from ${__filename}`});
+
     } catch (error) {
-        console.error("Google sign-in error:", error);
-        res.status(500).json({ message: "Something went wrong...Please try again!!", error: error.message });
+        console.log(`Error from ${__filename} \n` + error);
+        res.status(500).json({ message: "An error occured!! Please try again." });
     }
 }
 
-const googleLogin = async (req, res) => {
-    const { name, email } = req.body;
 
-    if (!name || !email) {
-        return res.status(400).json({ message: 'Login failed please try again. authController.js' })
-    }
-
+export const loginUser = async (req, res) => {
     try {
-        var user = await User.findOne({ email });
+        const { email, password } = req.body;
+        const user = await User.findOne({email});
+        
+        if(!user) return res.status(400).json({message: 'User not found. Please signup!!'});
 
-        if (!user) {
-            //Send additonal data collection fields for phone , store Name and address details. 
-            user = new User({ name, email });
-            await User.save();
+        console.log(user.password);
+        const match = await bcrytp.compare(password, user.password);
 
-            const token = jwt.sign(
-                {
-                    email: email,
-                    userId: user._id
-                },
-                process.env.SECRET_KEY,
-            );
+        if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
 
-            res.json({
-                token,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    picture: user.picture || null,
-                },
-                message: "Login successful"
-            });
-        }
+        const token = jwt.sign(
+            {
+                userId: user._id,
+                email: user.email,
+            },
+            process.env.SECRET_KEY,
+            { expiresIn: "4m" }
+        );
+
+        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+
+        const mailOptions = {
+            from: "Verify <noreply@ledger>",
+            to: email,
+            subject: "Verify your Identity for entering into the Local Market!!",
+            text: `Click the link to log in:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
+        };
+
+        await mg.messages().send(mailOptions);
+
+        res.status(200).json({ message: "A verification link has been sent to your mail. Please verify." });
+
     } catch (error) {
-        console.error("Google sign-in error at googleLogin user:", error);
-        res.status(500).json({ message: "Something went wrong...Please try again!!", error: error.message });
+        console.log(`Error from ${__filename} \n` + error);
+        res.status(500).json({ message: "An error occured!! Please try again." });
     }
 }
-
-export default {googleLoginSeller, googleLogin};
-
