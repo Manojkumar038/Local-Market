@@ -3,13 +3,12 @@ import jwt from 'jsonwebtoken';
 import mailgun from 'mailgun-js';
 import dotenv from 'dotenv';
 dotenv.config({ path: `.env.development`, quiet: true });
-import PendingUser from '../models/temp.js';
-import User from '../models/user.js';
+import PendingUser from '../../models/temp.js';
+import Seller from '../../models/seller.js';
 import { fileURLToPath } from 'url';
-import path from 'path';
+
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 
 const mg = mailgun({
@@ -22,9 +21,9 @@ export const registerUser = async (req, res) => {
     try {
 
         const { name, email, password } = req.body;
-        const user = await User.findOne({email});
-        if(user) {
-            return res.status(400).json({message: "User already exists..Please Login."});
+        const seller = await Seller.findOne({email});
+        if(seller) {
+            return res.status(400).json({message: "Seller Exists..Please Login."});
         }
 
         const hashedPassword = await bcrytp.hash(password, 10);
@@ -55,11 +54,11 @@ export const registerUser = async (req, res) => {
 
         await mg.messages().send(mailOptions);
 
-        res.status(200).json({message: `SignUp Sucessfull from ${__filename}`});
+        res.status(200).json({ message: `A verification link has been sent to your registered email address. Please check your inbox to verify your account.`});
 
     } catch (error) {
         console.log(`Error from ${__filename} \n` + error);
-        res.status(500).json({ message: "An error occured!! Please try again." });
+        res.status(500).json({ message: "An error occured while registering the seller!! Please try again." });
     }
 }
 
@@ -67,11 +66,11 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({email});
+        const seller = await Seller.findOne({email});
         
-        if(!user) return res.status(400).json({message: 'User not found. Please signup!!'});
+        if(!seller) return res.status(400).json({message: 'Seller not found. Please signup!!'});
 
-        console.log(user.password);
+        console.log(seller.password);
         const match = await bcrytp.compare(password, user.password);
 
         if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
@@ -100,6 +99,6 @@ export const loginUser = async (req, res) => {
 
     } catch (error) {
         console.log(`Error from ${__filename} \n` + error);
-        res.status(500).json({ message: "An error occured!! Please try again." });
+        res.status(500).json({ message: "An error occured while logging you in!! Please try again." });
     }
 }
