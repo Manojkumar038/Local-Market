@@ -27,7 +27,6 @@ export const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrytp.hash(password, 10);
-        console.log(`From ${__filename} \n Hashed Password: ` + hashedPassword);
 
         const token = jwt.sign(
             {
@@ -43,7 +42,7 @@ export const registerUser = async (req, res) => {
 
         await pendingUser.save();
 
-        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}`;
 
         const mailOptions = {
             from: "Verify <noreply@ledger>",
@@ -71,20 +70,20 @@ export const loginUser = async (req, res) => {
         if(!seller) return res.status(400).json({message: 'Seller not found. Please signup!!'});
 
         console.log(seller.password);
-        const match = await bcrytp.compare(password, user.password);
+        const match = await bcrytp.compare(password, seller.password);
 
         if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
 
         const token = jwt.sign(
             {
-                userId: user._id,
-                email: user.email,
+                userId: seller._id,
+                email: seller.email,
             },
             process.env.SECRET_KEY,
             { expiresIn: "4m" }
         );
 
-        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}`;
 
         const mailOptions = {
             from: "Verify <noreply@ledger>",

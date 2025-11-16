@@ -1,6 +1,17 @@
-import React, { useState } from "react";
- import "../../styles/AddProducts.css";
+import { useState, useEffect } from "react";
+import "../../styles/AddProducts.css";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+
+
+
+const fetchSellerProducts = async () => {
+  const res = await fetch("/api/seller/get-all-products", {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch seller products");
+  return res.json();
+};
 
 const AddProductPage = () => {
   const [productData, setProductData] = useState({
@@ -12,8 +23,16 @@ const AddProductPage = () => {
   });
 
   const navigate = useNavigate();
-
   const [previewImages, setPreviewImages] = useState([]);
+
+  const queryClient = useQueryClient();
+
+  // ✅ Fetch all seller products & put in cache if not already there
+  useQuery({
+    queryKey: ["sellerProducts"],
+    queryFn: fetchSellerProducts,
+    staleTime: 5 * 60 * 1000, // 5 mins caching
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,17 +80,24 @@ const AddProductPage = () => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const formData = new FormData();
     formData.append("name", productData.name);
     formData.append("price", productData.price);
     formData.append("description", productData.description);
-    productData.images.forEach((image) => formData.append("images", image));
     formData.append("highlights", JSON.stringify(productData.highlights));
+    productData.images.forEach((image) => {
+      if (image instanceof File) {
+        formData.append("images", image);
+      }
+    });
 
     console.log("Submitting product:", productData);
+
+    // ✅ Future: update API here and update react-query cache
+
     alert("Product submitted (check console)");
   };
 

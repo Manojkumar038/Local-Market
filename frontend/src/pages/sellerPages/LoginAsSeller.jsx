@@ -1,9 +1,11 @@
-// AuthPage.jsx
 import React, { useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login"); // 'login' | 'signup'
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const onGoogleSuccess = (cred) => {
     // cred contains {credential: <JWT>, select_by: ...}
@@ -18,15 +20,43 @@ export default function AuthPage() {
 
   const switchMode = () => setMode((m) => (m === "login" ? "signup" : "login"));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
     if (mode === "login") {
-      // POST /api/auth/login
-      console.log("Login:", data);
+      try {
+        const loginResponse = await axios.post(
+          `${backendUrl}/api/seller/login-seller`,
+          data
+        );
+        
+        console.log("Login response:", loginResponse);
+        alert(loginResponse.data.message);
+      } catch (error) { 
+        console.log("Login error:", error);
+        alert(
+          error.response?.data?.message ||
+            "An error occurred during login. Please try again."
+        );
+      }
     } else {
-      // POST /api/auth/signup
-      console.log("Signup:", data);
+      try {
+
+        const signUpResponse = await axios.post(
+          `${backendUrl}/api/seller/signup`,
+          data
+        );
+
+        console.log("Login response:", signUpResponse);
+        alert(signUpResponse.data.message);
+        
+      } catch (error) {
+        console.log("Login error:", error);
+        alert(
+          error.response?.data?.message ||
+            "An error occurred during signUp. Please try again."
+        );
+      }
     }
   };
 
@@ -42,8 +72,8 @@ export default function AuthPage() {
           <p className="desc">
             {" "}
             {mode === "login"
-              ? `Logging in as a Seller`
-              : "Registering as a Seller"}{" "}
+              ? `Enter your credentials to access your seller account.`
+              : "One step closer to the local market."}{" "}
           </p>
 
           <form className="form" onSubmit={handleSubmit}>
@@ -124,23 +154,39 @@ export default function AuthPage() {
       </section>
 
       <style>{`
-        .auth { min-height: 100vh; display: grid; place-items: center; background: transparent,#eef2f8); padding: 24px; margin: 10px}
-        .card { width: 100%; max-width: 420px; background: #fff; border-radius: 14px; padding: 22px 22px 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
-        .title {font-size: 22px; font-weight: 600; color: #0f172a; }
-        .desc {margin-bottom: 20px; color: #64748b; font-size: 14px; }
-        .form { display: grid; gap: 12px; margin-top: 8px; }
-        .field { display: grid; gap: 6px; }
-        label { font-size: 16px; color: #1f242cff;}
-        input { padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; }
-        input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-        .primary-btn { margin-top: 6px; width: 100%; padding: 10px 12px; background: #2563eb; color: #fff; font-weight: 700; border: 0; border-radius: 10px; cursor: pointer; }
-        .primary-btn:active { transform: translateY(1px); }
-        .divider { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; color: #64748b; margin: 14px 0; }
-        .divider::before, .divider::after { content: ""; height: 1px; background: #e2e8f0; }
-        .oauth { display: grid; place-items: center; gap: 10px; }
-        .toggle { margin: 14px 0 0; text-align: center; color: #475569; font-size: 14px; }
-        .link-btn { background: none; border: none; padding: 0; color: #2563eb; font-weight: 700; cursor: pointer; }
-      `}</style>
+  .auth {
+    min-height: 100vh;
+    min-width: 100vw;
+
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+    background: transparent, #eef2f8;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 22px 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+  }
+  .title {font-size: 22px; font-weight: 600; color: #0f172a;}
+  .desc {margin-bottom: 20px; color: #64748b; font-size: 14px;}
+  .form {display: grid; gap: 12px; margin-top: 8px;}
+  .field {display: grid; gap: 6px;}
+  label {font-size: 16px; color: #1f242cff;}
+  input {padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; outline: none;}
+  input:focus {border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15);}
+  .primary-btn {margin-top: 6px; width: 100%; padding: 10px 12px; background: #2563eb; color: #fff; font-weight: 700; border: 0; border-radius: 10px; cursor: pointer;}
+  .divider {display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; color: #64748b; margin: 14px 0;}
+  .divider::before, .divider::after {content: ""; height: 1px; background: #e2e8f0;}
+  .oauth {display: grid; place-items: center; gap: 10px;}
+  .toggle {margin: 14px 0 0; text-align: center; color: #475569; font-size: 14px;}
+  .link-btn {background: none; border: none; padding: 0; color: #2563eb; font-weight: 700; cursor: pointer;}
+`}</style>
     </GoogleOAuthProvider>
   );
 }

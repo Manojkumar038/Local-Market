@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import "../../styles/ManageProduct.css";
 
 const ManageProduct = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [productData, setProductData] = useState({
     name: "",
@@ -17,24 +19,22 @@ const ManageProduct = () => {
   const [previewImages, setPreviewImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ Get product from React Query cache
   useEffect(() => {
-    // Fetch product data when component mounts
-    const fetchProductData = async () => {
-      try {
-        // TODO: Replace with your actual API call
-        const response = await fetch(`/api/products/${productId}`);
-        const data = await response.json();
-        setProductData(data);
-        setPreviewImages(data.images); // Assuming images are URLs
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        setIsLoading(false);
-      }
-    };
+    try {
+      const products = queryClient.getQueryData(["sellerProducts"]);
+      const product = products?.find((p) => p._id === productId);
 
-    fetchProductData();
-  }, [productId]);
+      if (!product) throw new Error("Product not found in cache");
+
+      setProductData(product);
+      setPreviewImages(product.images || []);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      setIsLoading(false);
+    }
+  }, [productId, queryClient]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,12 +69,13 @@ const ManageProduct = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    const newPreviewImages = files.map((file) => URL.createObjectURL(file));
+
     setProductData((prev) => ({
       ...prev,
       images: [...prev.images, ...files],
     }));
 
-    const newPreviewImages = files.map((file) => URL.createObjectURL(file));
     setPreviewImages((prev) => [...prev, ...newPreviewImages]);
   };
 
@@ -83,6 +84,7 @@ const ManageProduct = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+
     URL.revokeObjectURL(previewImages[index]);
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -92,24 +94,39 @@ const ManageProduct = () => {
 
     try {
       const formData = new FormData();
+      formData.append("productId", productId);
       formData.append("name", productData.name);
       formData.append("price", productData.price);
       formData.append("description", productData.description);
+      formData.append("highlights", JSON.stringify(productData.highlights));
+
       productData.images.forEach((image) => {
         if (image instanceof File) {
           formData.append("images", image);
         }
       });
-      formData.append("highlights", JSON.stringify(productData.highlights));
 
-      // TODO: Replace with your actual API call
-      await fetch(`/api/products/${productId}`, {
-        method: "PUT",
-        body: formData,
-      });
+      const token = localStorage.getItem("token");
+
+      await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/update-product`,
+        {
+          method: "PUT",
+          body: formData,
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // ✅ Update React Query cache
+      queryClient.setQueryData(["sellerProducts"], (old) =>
+        old.map((p) => (p._id === productId ? { ...p, ...productData } : p))
+      );
 
       alert("Product updated successfully!");
-      navigate("/seller/products");
+      navigate("/seller/home");
     } catch (error) {
       console.error("Error updating product:", error);
       alert("Failed to update product");
@@ -135,10 +152,9 @@ const ManageProduct = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Product Name</label>
+            <label>Product Name</label>
             <input
               type="text"
-              id="name"
               name="name"
               value={productData.name}
               onChange={handleChange}
@@ -147,10 +163,9 @@ const ManageProduct = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="price">Price</label>
+            <label>Price</label>
             <input
               type="number"
-              id="price"
               name="price"
               value={productData.price}
               onChange={handleChange}
@@ -159,48 +174,45 @@ const ManageProduct = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description</label>
+            <label>Description</label>
             <textarea
-              id="description"
               name="description"
               value={productData.description}
               onChange={handleChange}
-              required
               rows="4"
+              required
             />
           </div>
 
           <div className="form-group">
             <label>Product Highlights</label>
-            <div className="highlights-container">
-              {productData.highlights.map((highlight, i) => (
-                <div key={i} className="highlight-row">
-                  <input
-                    type="text"
-                    placeholder="Key"
-                    value={highlight.key}
-                    onChange={(e) =>
-                      handleHighlightChange(i, "key", e.target.value)
-                    }
-                  />
-                  <input
-                    type="text"
-                    placeholder="Value"
-                    value={highlight.value}
-                    onChange={(e) =>
-                      handleHighlightChange(i, "value", e.target.value)
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={() => removeHighlight(i)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+            {productData.highlights.map((highlight, i) => (
+              <div key={i} className="highlight-row">
+                <input
+                  type="text"
+                  placeholder="Key"
+                  value={highlight.key}
+                  onChange={(e) =>
+                    handleHighlightChange(i, "key", e.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="Value"
+                  value={highlight.value}
+                  onChange={(e) =>
+                    handleHighlightChange(i, "value", e.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  className="remove-btn"
+                  onClick={() => removeHighlight(i)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
             <button
               type="button"
               className="add-highlight-btn"
@@ -211,7 +223,7 @@ const ManageProduct = () => {
           </div>
 
           <div className="form-group">
-            <label>Update Product Images</label>
+            <label>Product Images</label>
             <input
               type="file"
               accept="image/*"

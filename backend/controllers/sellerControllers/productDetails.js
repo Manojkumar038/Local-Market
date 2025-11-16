@@ -1,4 +1,6 @@
 import Product from '../../models/products.js';
+import Seller from '../../models/seller.js';
+
 
 // Add a new product
 export const addProduct = async (req, res) => {
@@ -66,7 +68,7 @@ export const updateProduct = async (req, res) => {
 
 // Get all products for a store
 export const getAllProducts = async (req, res) => {
-    const { storeId } = req.body;
+    const { storeId } = req.query;
 
     if (!storeId) return res.status(400).json({ message: 'storeId is required.' });
 
@@ -78,3 +80,44 @@ export const getAllProducts = async (req, res) => {
         return res.status(500).json({ message: 'Failed to fetch products.' });
     }
 };
+
+// Get single product details 
+export const getProductDetails = async (req, res) => {
+
+    try {
+        const { productId } = req.params;
+
+        if (!productId) return res.status(400).json({ success: false, message: "Product Id is required." });
+
+        const product = await Product.findOne({ productId });
+
+        if (!product) return res.status(404).json({ success: false, message: "Product not found." });
+
+        return res.status(200).json({
+            success: true,
+            product
+        });
+    } catch (error) {
+        console.error(`Error in getProductDetails: ${error}`);
+        return res.status(500).json({ message: 'Failed to fetch product details.' });
+    }
+
+}
+
+// Get Seller Information 
+
+export const getSeller = async (req, res) => {
+    try {
+        const { email } = req.user.email;
+        console.log(req.user.email);
+        const seller = await Seller.findOne({email});
+
+        if(!seller) return res.status(400).json({message: 'Seller not found'});
+
+        return res.status(200).json(seller);
+
+    } catch (error) {
+        console.error(`Error in getSeller: ${error}`);
+        return res.status(500).json({ message: 'Failed to fetch seller details.' });
+    }
+}

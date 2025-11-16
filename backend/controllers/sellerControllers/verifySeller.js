@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 import PendingUser from '../../models/temp.js';
 import Seller from '../../models/seller.js';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+
+
 import { fileURLToPath } from 'url';
 
 
@@ -91,7 +95,7 @@ export const verifyGoogleLogin = async (req, res) => {
         const token = jwt.sign(
             {
                 email: email,
-                userId: user._id
+                userId: seller._id
             },
             process.env.SECRET_KEY,
         );
