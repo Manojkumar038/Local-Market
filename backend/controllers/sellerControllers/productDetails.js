@@ -108,8 +108,8 @@ export const getProductDetails = async (req, res) => {
 
 export const getSeller = async (req, res) => {
     try {
-        const { email } = req.user.email;
-        console.log(req.user.email);
+        const email  = req.user.email;
+        console.log(email);
         const seller = await Seller.findOne({email});
 
         if(!seller) return res.status(400).json({message: 'Seller not found'});

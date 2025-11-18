@@ -19,7 +19,6 @@ export const verifyUser = async (req, res) => {
 
         const pendingUser = await PendingUser.findOne({
             email: decoded.email, 
-            token: token
         });
 
         if(!pendingUser) return res.status(400).json({message: 'Request Expired. Please try again.'});
@@ -54,7 +53,7 @@ export const verifyLogin = async (req, res) => {
 
 
         const loginToken = jwt.sign(
-            { userId: decoded._id, email: decoded.email },
+            { userId: decoded.userId, email: decoded.email },
             process.env.SECRET_KEY,
         );
 

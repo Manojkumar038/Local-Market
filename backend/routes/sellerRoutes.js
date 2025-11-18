@@ -3,14 +3,15 @@ import { verifyUser, verifyLogin, verifyGoogleLogin } from "../controllers/selle
 import { addProduct, deleteProduct, updateProduct, getAllProducts, getProductDetails, getSeller } from '../controllers/sellerControllers/productDetails.js'
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js'
+import { createOrUpdateStore } from "../controllers/sellerControllers/storeControllers.js";
 
 const router = express.Router();
 
 // Public Routes
 router.post('/signup', registerUser);
-router.post('/verify-seller', verifyUser);
+router.get('/verify-seller', verifyUser);
 router.post('/login-seller', loginUser);
-router.post('/verify-seller-login', verifyLogin);
+router.get('/verify-seller-login', verifyLogin);
 router.post('/verify-google-login', verifyGoogleLogin);
 
 // Protected Routes
@@ -23,5 +24,7 @@ router.post('/update-product', updateProduct);
 router.get('/get-product-details/:storeId', getProductDetails);
 router.get('/get-all-products', getAllProducts);
 router.get('/get-seller-info', getSeller);
+
+router.put("/create-store", createOrUpdateStore);
 
 export default router;

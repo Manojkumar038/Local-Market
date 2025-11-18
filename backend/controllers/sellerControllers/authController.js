@@ -1,4 +1,4 @@
-import bcrytp from 'bcryptjs'; 
+import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken'; 
 import mailgun from 'mailgun-js';
 import dotenv from 'dotenv';
@@ -26,7 +26,7 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({message: "Seller Exists..Please Login."});
         }
 
-        const hashedPassword = await bcrytp.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const token = jwt.sign(
             {
@@ -37,18 +37,18 @@ export const registerUser = async (req, res) => {
         );
         
         const pendingUser = new PendingUser({
-            name, email, password: hashedPassword, token
+            name, email, password: hashedPassword
         });
 
         await pendingUser.save();
 
-        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}&type=signup`;
 
         const mailOptions = {
-            from: "Verify <noreply@ledger>",
+            from: "Verify <noreply@LocalMarket>",
             to: email,
             subject: "Verify your Identity for entering into the Local Market!!",
-            text: `Click the link to log in:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
+            text: `Click the link to verify your account:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
         };
 
         await mg.messages().send(mailOptions);
@@ -70,7 +70,7 @@ export const loginUser = async (req, res) => {
         if(!seller) return res.status(400).json({message: 'Seller not found. Please signup!!'});
 
         console.log(seller.password);
-        const match = await bcrytp.compare(password, seller.password);
+        const match = await bcrypt.compare(password, seller.password);
 
         if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
 
@@ -83,7 +83,7 @@ export const loginUser = async (req, res) => {
             { expiresIn: "4m" }
         );
 
-        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/seller/verify?token=${token}&type=login`;
 
         const mailOptions = {
             from: "Verify <noreply@ledger>",
