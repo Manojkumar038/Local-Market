@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import StorePage from "../pages/sellerPages/SellerHomePage.jsx";
-import AddProductPage from "../pages/sellerPages/AddProducts.jsx";
+import AddProducts from "../pages/sellerPages/AddProducts.jsx";
 import ManageProduct from "../pages/sellerPages/ManageProduct.jsx";
 import LoginSeller from "../pages/sellerPages/LoginAsSeller.jsx";
 import VerifySeller from "../pages/sellerPages/VerifySeller.jsx";
@@ -12,9 +12,9 @@ export default function SellerRoutes() {
     <Routes>
       <Route element={<ProtectRoutes />}>
         <Route index element={<StorePage />} /> {/* FIXED */}
-        <Route path="add-product" element={<AddProductPage />} />
+        <Route path="add-product" element={<AddProducts />} />
         <Route path="manage-product" element={<ManageProduct />} />
-        <Route path="create-store" element={<CreateStore/>} />
+        <Route path="create-store" element={<CreateStore />} />
       </Route>
 
       <Route path="login" element={<LoginSeller />} />

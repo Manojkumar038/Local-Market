@@ -1,232 +1,353 @@
-import { useState, useEffect } from "react";
-import "../../styles/AddProducts.css";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import axios from "axios";
+import { uploadToCloudinary } from "../../components/UploadToCloud.jsx";
 
-
-
-const fetchSellerProducts = async () => {
-  const res = await fetch("/api/seller/get-all-products", {
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to fetch seller products");
-  return res.json();
-};
-
-const AddProductPage = () => {
+export default function AddProducts() {
   const [productData, setProductData] = useState({
     name: "",
     price: "",
+    discountPrice: "",
+    stock: "",
+    category: "",
     description: "",
-    highlights: [{ key: "", value: "" }],
-    images: [],
+    images: [], // Cloudinary URLs (AFTER submit)
+    highlights: [],
+    tags: "",
   });
 
-  const navigate = useNavigate();
+  const [localImages, setLocalImages] = useState([]); 
   const [previewImages, setPreviewImages] = useState([]);
+  const [highlightInput, setHighlightInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const imagesRef = React.useRef([]);
 
-  const queryClient = useQueryClient();
 
-  // ✅ Fetch all seller products & put in cache if not already there
-  useQuery({
-    queryKey: ["sellerProducts"],
-    queryFn: fetchSellerProducts,
-    staleTime: 5 * 60 * 1000, // 5 mins caching
-  });
+  // Handle image selection Without upload
+  const handleImageSelection = (e) => {
+    const files = [...e.target.files];
+    if (!files.length) return;
 
+    imagesRef.current = files; // 
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPreviewImages(previews);
+  };
+
+
+  // Handle normal input fields
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProductData((prev) => ({ ...prev, [name]: value }));
+    const { id, value } = e.target;
+    setProductData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleHighlightChange = (index, field, value) => {
-    const newHighlights = [...productData.highlights];
-    newHighlights[index][field] = value;
-    setProductData((prev) => ({ ...prev, highlights: newHighlights }));
-  };
-
+  // Add highlight bullet
   const addHighlight = () => {
+    if (!highlightInput.trim()) return;
+
     setProductData((prev) => ({
       ...prev,
-      highlights: [...prev.highlights, { key: "", value: "" }],
-    }));
-  };
-
-  const removeHighlight = (index) => {
-    setProductData((prev) => ({
-      ...prev,
-      highlights: prev.highlights.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setProductData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...files],
+      highlights: [...prev.highlights, { detail: highlightInput }],
     }));
 
-    const newPreviewImages = files.map((file) => URL.createObjectURL(file));
-    setPreviewImages((prev) => [...prev, ...newPreviewImages]);
+    setHighlightInput("");
   };
 
-  const removeImage = (index) => {
-    setProductData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-
-    URL.revokeObjectURL(previewImages[index]);
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
+  // SUBMIT product → upload images → then save
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    
 
-    const formData = new FormData();
-    formData.append("name", productData.name);
-    formData.append("price", productData.price);
-    formData.append("description", productData.description);
-    formData.append("highlights", JSON.stringify(productData.highlights));
-    productData.images.forEach((image) => {
-      if (image instanceof File) {
-        formData.append("images", image);
-      }
-    });
+    try {
+      let imageURLs = [];
+      console.log("Files in imagesRef:", imagesRef.current);
 
-    console.log("Submitting product:", productData);
+     if (imagesRef.current.length > 0) {
+       imageURLs = await Promise.all(
+         imagesRef.current.map((file) => uploadToCloudinary(file))
+       );
+     }
 
-    // ✅ Future: update API here and update react-query cache
+      const payload = {
+        ...productData,
+        images: imageURLs,
+        tags: productData.tags.split(",").map((tag) => tag.trim()),
+      };
 
-    alert("Product submitted (check console)");
+      const token = localStorage.getItem("token");
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/seller/add-product`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert("Product added successfully!");
+
+      // Reset UI
+      setProductData({
+        name: "",
+        price: "",
+        discountPrice: "",
+        stock: "",
+        category: "",
+        description: "",
+        images: [],
+        highlights: [],
+        tags: "",
+      });
+
+      setLocalImages([]);
+      setPreviewImages([]);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to add product!");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="add-product-container">
-      <div className="add-product-form">
-        <button
-          type="button"
-          className="abort-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Close"
-        >
-          ×
-        </button>
-        <h2 className="heading">Add New Product</h2>
-        <form onSubmit={handleSubmit}>
-          {/* Product Name */}
-          <div className="form-group">
-            <label htmlFor="name">Product Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={productData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+    <>
+      {/* Inline page CSS */}
+      <style>{`
+        .add-product-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 4%;
+          animation: fadeIn 0.4s ease-in-out;
+        }
 
-          {/* Product Price */}
-          <div className="form-group">
-            <label htmlFor="price">Price</label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={productData.price}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
 
-          {/* Product Description */}
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={productData.description}
-              onChange={handleChange}
-              required
-              rows="4"
-            />
-          </div>
+        .add-product-card {
+          width: 100%;
+          max-width: 650px;
+          background: white;
+          border-radius: 14px;
+          padding: 30px;
+          border: 1.5px solid #e5e7eb;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
 
-          {/* Product Highlights */}
-          <div className="form-group">
-            <label>Product Highlights</label>
-            <div className="highlights-container">
-              {productData.highlights.map((highlight, i) => (
-                <div key={i} className="highlight-row">
-                  <input
-                    type="text"
-                    placeholder="Key"
-                    value={highlight.key}
-                    onChange={(e) =>
-                      handleHighlightChange(i, "key", e.target.value)
-                    }
-                  />
-                  <input
-                    type="text"
-                    placeholder="Value"
-                    value={highlight.value}
-                    onChange={(e) =>
-                      handleHighlightChange(i, "value", e.target.value)
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={() => removeHighlight(i)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="add-highlight-btn"
-              onClick={addHighlight}
-            >
-              Add Highlight
-            </button>
-          </div>
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          margin: 10px 0;
+        }
 
-          {/* Product Images */}
-          <div className="form-group">
-            <label>Product Images</label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-              className="file-input"
-            />
-            <div className="image-preview-container">
-              {previewImages.map((src, index) => (
-                <div key={index} className="image-preview">
-                  <img src={src} alt={`Preview ${index + 1}`} />
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={() => removeImage(index)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+        .input-field {
+          width: 100%;
+          padding: 10px;
+          border: 1.8px solid #d1d5db;
+          border-radius: 10px;
+          background: #fafafa;
+          transition: 0.25s ease;
+        }
 
-          <button type="submit" className="submit-btn">
+        .input-field:focus {
+          border-color: #08f2d7ff;
+          background: #ffffff;
+          box-shadow: 0px 0px 4px rgba(0,255,193,0.4);
+        }
+
+        .preview-img {
+          width: 120px;
+          height: 120px;
+          border-radius: 10px;
+          object-fit: cover;
+          margin: 10px;
+          border: 2px solid #ccc;
+        }
+
+        .highlight-pill {
+          padding: 5px 12px;
+          background: #e5f9f6;
+          border-radius: 8px;
+          margin: 4px;
+          font-size: 14px;
+          display: inline-block;
+        }
+
+        .submit-btn {
+          padding: 12px;
+          background: #38c1b1;
+          border-radius: 10px;
+          color: white;
+          border: none;
+          font-weight: 600;
+          transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+      `}</style>
+
+      <div className="add-product-container">
+        <div className="add-product-card">
+          <h2 className="text-center text-2xl font-semibold mb-4">
             Add Product
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
+          </h2>
 
-export default AddProductPage;
+          <form onSubmit={handleSubmit}>
+            {/* Product Name */}
+            <div className="input-group">
+              <label>Product Name</label>
+              <input
+                id="name"
+                className="input-field"
+                type="text"
+                value={productData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {/* Price */}
+            <div className="input-group">
+              <label>Price</label>
+              <input
+                id="price"
+                className="input-field"
+                type="number"
+                value={productData.price}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {/* Discount Price */}
+            <div className="input-group">
+              <label>Discount Price</label>
+              <input
+                id="discountPrice"
+                className="input-field"
+                type="number"
+                value={productData.discountPrice}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Stock */}
+            <div className="input-group">
+              <label>Stock</label>
+              <input
+                id="stock"
+                className="input-field"
+                type="number"
+                value={productData.stock}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Category */}
+            <div className="input-group">
+              <label>Category</label>
+              <select
+                id="category"
+                className="input-field"
+                value={productData.category}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Choose category</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Fruits">Fruits</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Electronics">Electronics</option>
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="input-group">
+              <label>Description</label>
+              <textarea
+                id="description"
+                className="input-field"
+                rows="3"
+                value={productData.description}
+                onChange={handleChange}
+              ></textarea>
+            </div>
+
+            {/* Tags */}
+            <div className="input-group">
+              <label>Tags (comma separated)</label>
+              <input
+                id="tags"
+                className="input-field"
+                type="text"
+                placeholder="milk, fresh, organic"
+                value={productData.tags}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Highlights */}
+            <div className="input-group">
+              <label>Highlights</label>
+
+              <div style={{ display: "flex", width: "100%", gap: "10px" }}>
+                <input
+                  className="input-field"
+                  type="text"
+                  value={highlightInput}
+                  onChange={(e) => setHighlightInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={addHighlight}
+                  className="submit-btn"
+                  style={{ width: "120px" }}
+                >
+                  Add
+                </button>
+              </div>
+
+              <div>
+                {productData.highlights.map((item, index) => (
+                  <span key={index} className="highlight-pill">
+                    {item.detail}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Select Multiple Product Images */}
+            <div className="input-group">
+              <label>Product Images</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageSelection}
+              />
+
+              <div>
+                {previewImages.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt="preview"
+                    className="preview-img"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? "Uploading..." : "Add Product"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}

@@ -90,7 +90,6 @@ export default function CreateStore() {
         .text-2xl {
           font-size: 26px;
           font-weight: 600;
-          font: 
         }
 
         .create-store-container {

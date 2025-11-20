@@ -4,7 +4,10 @@ import Seller from '../../models/seller.js';
 
 // Add a new product
 export const addProduct = async (req, res) => {
-    const { storeId, images, name, description, price, highlights } = req.body;
+    const { images, name, description, price, highlights } = req.body;
+    const storeId = req.user.userId;
+
+    console.log(req.body);
 
     if (!storeId || !name || !price) {
         return res.status(400).json({ message: 'storeId, name, and price are required.' });
