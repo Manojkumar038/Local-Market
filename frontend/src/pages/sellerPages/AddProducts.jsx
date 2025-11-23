@@ -10,36 +10,46 @@ export default function AddProducts() {
     stock: "",
     category: "",
     description: "",
-    images: [], // Cloudinary URLs (AFTER submit)
+    coverPhoto: "",
+    images: [],
     highlights: [],
     tags: "",
   });
 
-  const [localImages, setLocalImages] = useState([]); 
   const [previewImages, setPreviewImages] = useState([]);
   const [highlightInput, setHighlightInput] = useState("");
+  const [coverPhotoPreview, setCoverPhotoPreview] = useState("");
   const [loading, setLoading] = useState(false);
+
   const imagesRef = React.useRef([]);
+  const coverPhotoRef = React.useRef(null);
 
+  // ---------------- COVER PHOTO SELECTION ----------------
+  const handleCoverPhotoSelection = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  // Handle image selection Without upload
+    coverPhotoRef.current = file;
+    setCoverPhotoPreview(URL.createObjectURL(file));
+  };
+
+  // ---------------- MULTIPLE IMAGES ----------------
   const handleImageSelection = (e) => {
     const files = [...e.target.files];
     if (!files.length) return;
 
-    imagesRef.current = files; // 
+    imagesRef.current = files;
     const previews = files.map((file) => URL.createObjectURL(file));
     setPreviewImages(previews);
   };
 
-
-  // Handle normal input fields
+  // ---------------- INPUT CHANGE ----------------
   const handleChange = (e) => {
     const { id, value } = e.target;
     setProductData((prev) => ({ ...prev, [id]: value }));
   };
 
-  // Add highlight bullet
+  // ---------------- ADD HIGHLIGHT ----------------
   const addHighlight = () => {
     if (!highlightInput.trim()) return;
 
@@ -51,26 +61,36 @@ export default function AddProducts() {
     setHighlightInput("");
   };
 
-  // SUBMIT product → upload images → then save
+  // ---------------- SUBMIT PRODUCT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
 
     try {
+      let uploadedCoverPhoto = "";
       let imageURLs = [];
-      console.log("Files in imagesRef:", imagesRef.current);
 
-     if (imagesRef.current.length > 0) {
-       imageURLs = await Promise.all(
-         imagesRef.current.map((file) => uploadToCloudinary(file))
-       );
-     }
+      // Upload COVER PHOTO
+      if (coverPhotoRef.current) {
+        uploadedCoverPhoto = await uploadToCloudinary(coverPhotoRef.current);
+      }
 
+      // Upload MULTIPLE IMAGES
+      if (imagesRef.current.length > 0) {
+        imageURLs = await Promise.all(
+          imagesRef.current.map((file) => uploadToCloudinary(file))
+        );
+      }
+
+      // Final payload sent to backend
       const payload = {
         ...productData,
+        coverPhoto: uploadedCoverPhoto,
         images: imageURLs,
-        tags: productData.tags.split(",").map((tag) => tag.trim()),
+        tags: productData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
       };
 
       const token = localStorage.getItem("token");
@@ -91,13 +111,16 @@ export default function AddProducts() {
         stock: "",
         category: "",
         description: "",
+        coverPhoto: "",
         images: [],
         highlights: [],
         tags: "",
       });
 
-      setLocalImages([]);
       setPreviewImages([]);
+      setCoverPhotoPreview("");
+      imagesRef.current = [];
+      coverPhotoRef.current = null;
     } catch (error) {
       console.error(error);
       alert("Failed to add product!");
@@ -108,13 +131,12 @@ export default function AddProducts() {
 
   return (
     <>
-      {/* Inline page CSS */}
       <style>{`
         .add-product-container {
           display: flex;
           justify-content: center;
           align-items: center;
-          margin-top: 4%;
+          margin-top: 2%;
           animation: fadeIn 0.4s ease-in-out;
         }
 
@@ -132,6 +154,8 @@ export default function AddProducts() {
           border: 1.5px solid #e5e7eb;
           box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         }
+
+        label { margin-bottom: 8px; }
 
         .input-group {
           display: flex;
@@ -181,11 +205,6 @@ export default function AddProducts() {
           font-weight: 600;
           transition: 0.2s;
         }
-
-        .submit-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
       `}</style>
 
       <div className="add-product-container">
@@ -195,7 +214,7 @@ export default function AddProducts() {
           </h2>
 
           <form onSubmit={handleSubmit}>
-            {/* Product Name */}
+            {/* ------------ NAME ------------ */}
             <div className="input-group">
               <label>Product Name</label>
               <input
@@ -208,7 +227,7 @@ export default function AddProducts() {
               />
             </div>
 
-            {/* Price */}
+            {/* ------------ PRICE ------------ */}
             <div className="input-group">
               <label>Price</label>
               <input
@@ -319,7 +338,25 @@ export default function AddProducts() {
               </div>
             </div>
 
-            {/* Select Multiple Product Images */}
+            {/* ------------ COVER PHOTO ------------ */}
+            <div className="input-group">
+              <label>Cover Photo (Main Image)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverPhotoSelection}
+              />
+
+              {coverPhotoPreview && (
+                <img
+                  src={coverPhotoPreview}
+                  alt="cover"
+                  className="preview-img"
+                />
+              )}
+            </div>
+
+            {/* Multiple Images */}
             <div className="input-group">
               <label>Product Images</label>
               <input
@@ -341,7 +378,6 @@ export default function AddProducts() {
               </div>
             </div>
 
-            {/* Submit */}
             <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "Uploading..." : "Add Product"}
             </button>

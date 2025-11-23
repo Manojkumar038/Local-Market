@@ -1,97 +1,121 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import "../styles/navbar.css";
 import logo from "../assets/logo.svg";
 import userProfileIcon from "../assets/userProfileIcon.svg";
 
-export default function NavBar({ links = [], menuItems = [] }) {
+export default function NavBar({
+  showMenu = true, 
+  menuItems = [], 
+  showLinks = false,
+  links = [], // 
+  appName = "Local Market",
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
 
+  // close menu when clicking outside
   useEffect(() => {
-    const onClickOutside = (e) => {
-      if (!menuRef.current || !btnRef.current) return;
-      const clickedInsideMenu = menuRef.current.contains(e.target);
-      const clickedButton = btnRef.current.contains(e.target);
-      if (!clickedInsideMenu && !clickedButton) setOpen(false);
+    if (!showMenu) return;
+
+    const handleOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
 
-    const onEscape = (e) => {
+    const handleEscape = (e) => {
       if (e.key === "Escape") setOpen(false);
     };
 
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("keydown", onEscape);
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+
     return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onEscape);
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [showMenu]);
 
   return (
-    <header className="nav" style={{ borderRadius: 12 }}>
+    <header className="nav">
+      {/* Left - Brand */}
       <div className="nav-left">
-        <a href="/" className="brand" aria-label="Home">
+        <Link to="/" className="brand">
           <img
             src={logo}
+            alt="Logo"
             style={{ width: "50px", height: "50px" }}
-            alt=""
-            className="avatar-img"
           />
-          <span className="app-name">Local Market</span>
-        </a>
-      </div>
+          <span className="app-name">{appName}</span>
+        </Link>
 
-      <div className="nav-right">
-        <button
-          ref={btnRef}
-          className="avatar-btn"
-          onClick={() => setOpen((v) => !v)}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-label="Open profile menu"
-        >
-          <img
-            src={userProfileIcon}
-            style={{ width: "35px", height: "35px" }}
-            alt=""
-            className="avatar-img"
-          />
-        </button>
-
-        {open && (
-          <div
-            ref={menuRef}
-            className="menu"
-            role="menu"
-            aria-label="Profile menu"
-          >
-            {menuItems.map((item, index) =>
-              item.href ? (
-                <a
-                  key={index}
-                  href={item.href}
-                  role="menuitem"
-                  tabIndex={0}
-                  className={`menu-item ${item.className || ""}`}
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <button
-                  key={index}
-                  onClick={item.onClick}
-                  role="menuitem"
-                  tabIndex={0}
-                  className={`menu-item ${item.className || ""}`}
-                >
-                  {item.label}
-                </button>
-              )
-            )}
-          </div>
+        {/* Optional top-level navigation links */}
+        {showLinks && (
+          <nav className="nav-links">
+            {links.map((l, i) => (
+              <Link key={i} to={l.href} className="nav-link">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
         )}
       </div>
+
+      {/* Right - Menu (toggleable) */}
+      {showMenu && (
+        <div className="nav-right">
+          <button
+            ref={btnRef}
+            className="avatar-btn"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <img
+              src={userProfileIcon}
+              style={{ width: "35px", height: "35px" }}
+              alt="User Icon"
+            />
+          </button>
+
+          {open && (
+            <div ref={menuRef} className="menu">
+              {menuItems.length > 0 ? (
+                menuItems.map((item, index) =>
+                  item.href ? (
+                    <Link
+                      key={index}
+                      to={item.href}
+                      className="menu-item"
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      key={index}
+                      className="menu-item"
+                      onClick={() => {
+                        item.onClick?.();
+                        setOpen(false);
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                )
+              ) : (
+                <div className="menu-item muted">No actions available</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

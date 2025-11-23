@@ -4,17 +4,17 @@ import Seller from '../../models/seller.js';
 
 // Add a new product
 export const addProduct = async (req, res) => {
-    const { images, name, description, price, highlights } = req.body;
+    const { coverPhoto, images, name, description, price, highlights } = req.body;
     const storeId = req.user.userId;
 
     console.log(req.body);
 
-    if (!storeId || !name || !price) {
-        return res.status(400).json({ message: 'storeId, name, and price are required.' });
+    if (!storeId || !name || !price || !coverPhoto) {
+        return res.status(400).json({ message: 'storeId, name, and price, coverPhoto are required.' });
     }
 
     try {
-        const product = new Product({ storeId, images, name, description, price, highlights });
+        const product = new Product({ storeId, images, coverPhoto, name, description, price, highlights });
         await product.save();
         return res.status(201).json({ message: 'Product listed successfully!' });
     } catch (error) {
@@ -72,11 +72,14 @@ export const updateProduct = async (req, res) => {
 // Get all products for a store
 export const getAllProducts = async (req, res) => {
     const { storeId } = req.query;
+    console.log(storeId)
 
     if (!storeId) return res.status(400).json({ message: 'storeId is required.' });
-
+    
     try {
         const products = await Product.find({ storeId });
+        console.log(products)
+
         return res.status(200).json({ message: 'Products fetched successfully.', products });
     } catch (error) {
         console.error(`Error in getAllProducts: ${error}`);
@@ -112,7 +115,6 @@ export const getProductDetails = async (req, res) => {
 export const getSeller = async (req, res) => {
     try {
         const email  = req.user.email;
-        console.log(email);
         const seller = await Seller.findOne({email});
 
         if(!seller) return res.status(400).json({message: 'Seller not found'});

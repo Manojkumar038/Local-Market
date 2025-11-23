@@ -1,87 +1,84 @@
 import React, { useState, useEffect, useRef } from "react";
-import NavBar from "../../components/NavBar";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import Banner from "../../assets/banner.svg";
-import MarketLoader from "../../components/MarketLoader";
+import "../../styles/Dashboard.css";
+import { useNavigate } from "react-router-dom";
+import NavBar from "../../components/NavBar.jsx";
 
 
-export default function StorePage() {
-
+export default function SellerHomePage() {
   const navigate = useNavigate();
 
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const containerRef = useRef(null);
   const [storeData, setStoreData] = useState(null);
-  const [items, setItems] = useState([]);
-  const [editOpen, setEditOpen] = useState(false);
-  const [draft, setDraft] = useState({
-    storeName: "",
-    bannerImage: "",
-    storeDescription: "",
-  });
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // UI state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const containerRef = useRef(null);
+
+  const recentOrders = []; // or fetched data later
+  const topSelling = []; // or fetched data later
+
   useEffect(() => {
-    async function getSellerData() {
+    async function fetchData() {
       try {
         const token = localStorage.getItem("token");
 
         const sellerResponse = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/seller/get-seller-info`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const seller = sellerResponse.data;
 
-        const storeData = {
+        const formattedStore = {
           storeCreated: seller.storeCreated,
           storeName: seller.storeName,
           bannerImage: seller.storeBanner?.trim() || Banner,
-          storeDescription: seller.storeDescription,
+          storeDescription: seller.description,
         };
 
-        setStoreData(storeData);
+        setStoreData(formattedStore);
 
-        if (!seller.storeCreated) {
+        // Only ONE check needed
+        if (seller.storeCreated !== true) {
           setLoading(false);
           return navigate("/seller/create-store");
-        } 
-
-        if (seller.storeCreated) {
-          const products = await axios.get(
-            `${
-              import.meta.env.VITE_BACKEND_URL
-            }/api/seller/get-product-details/${seller._id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          setItems(products.data.products);
         }
-      } catch (error) {
-        console.error(error);
-      }
 
-      setLoading(false);
+        // Fetch products
+        const productResponse = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/seller/get-all-products?storeId=${seller._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        console.log(productResponse);
+        setProducts(productResponse.data.products || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    getSellerData();
-  }, []);
+    fetchData();
+  }, [navigate]);
 
-  
+  // click outside to close kebab menus
   useEffect(() => {
-    function onDocClick(e) {
+    function handleDocClick(e) {
       if (!containerRef.current) return;
       if (!containerRef.current.contains(e.target)) {
         setOpenMenuId(null);
       }
     }
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
   }, []);
 
   function handleDelete(id) {
@@ -89,209 +86,314 @@ export default function StorePage() {
       setOpenMenuId(null);
       return;
     }
-    // FIXED: use _id not id
-    setItems((prev) => prev.filter((p) => p._id !== id));
+    setProducts((prev) => prev.filter((p) => p._id !== id));
     setOpenMenuId(null);
   }
 
-  // Edit dialog handlers
-  const openEditor = () => {
-    setDraft(storeData);
-    setEditOpen(true);
-  };
-  const closeEditor = () => setEditOpen(false);
-
-  const saveEditor = (e) => {
-    e.preventDefault();
-    setStoreData(draft);
-    setEditOpen(false);
-  };
-
   if (loading || !storeData) {
-    return <MarketLoader />;
+    return <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>;
   }
-
 
   return (
     <>
-      <NavBar
-        menuItems={[
-          { label: "Profile", href: "/profile" },
-          { label: "Add Products", href: "/add-product" },
-          { label: "My Orders", href: "/orders" },
-          { label: "Settings", href: "/settings" },
-          {
-            label: "Logout",
-            onClick: () => alert("Logging out..."),
-            className: "danger",
-          },
-        ]}
-      />
-
-      <header
-        className="store-hero"
-        role="banner"
-        style={{
-          backgroundImage: `url("${storeData.bannerImage}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="store-hero__overlay">
-          <div className="store-title-row">
-            <h1 className="store-title">{storeData.storeName}</h1>
-
-            <button
-              className="edit-btn"
-              aria-label="Edit store details"
-              onClick={openEditor}
-              title="Edit store"
+      <NavBar showMenu={false}></NavBar>
+      <div className="sd-wrapper">
+        {/* Topbar - shows hamburger on mobile */}
+        <header className="sd-topbar">
+          <button className="hamburger" onClick={() => setDrawerOpen(true)}>
+            <svg
+              width="28"
+              height="22"
+              viewBox="0 0 28 22"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              ✏️
+              <path
+                d="M3 4h22M3 12h22M3 20h22"
+                stroke="#000"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+
+          <div className="topbar-title">{storeData.storeName}</div>
+        </header>
+
+        {/* Drawer overlay */}
+        <div
+          className={`sd-drawer-backdrop ${drawerOpen ? "open" : ""}`}
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden={drawerOpen ? "false" : "true"}
+        />
+
+        {/* Drawer / Sidebar */}
+        <aside
+          className={`sd-drawer ${drawerOpen ? "open" : ""}`}
+          aria-hidden={!drawerOpen}
+        >
+          <div className="drawer-header">
+            <strong>Seller Panel</strong>
+            <button
+              className="close-drawer"
+              onClick={() => setDrawerOpen(false)}
+            >
+              ✕
             </button>
           </div>
-          <p className="store-note">{storeData.storeDescription}</p>
-        </div>
-      </header>
 
-      <section className="products-section" aria-label="Products">
-        <h2 className="section-heading">Products</h2>
+          <nav className="drawer-nav">
+            <a
+              className="nav-item active"
+              onClick={() => {
+                setDrawerOpen(false);
+              }}
+            >
+              Dashboard
+            </a>
 
-        <div className="products-grid" ref={containerRef}>
-          {items.map((p) => (
-            <article key={p._id} className="product-card" tabIndex={0}>
-              <div className="product-media">
-                <img src={p.image} alt={p.name} />
-              </div>
+            <a
+              className="nav-item"
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate("/seller/add-product");
+              }}
+            >
+              Add Product
+            </a>
+            <a
+              className="nav-item"
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate("/seller");
+              }}
+            >
+              Orders
+            </a>
+            <a
+              className="nav-item"
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate("/seller/settings");
+              }}
+            >
+              Store Settings
+            </a>
+            <button
+              className="nav-item logout"
+              onClick={() => {
+                setDrawerOpen(false); /* logout logic */
+              }}
+            >
+              Logout
+            </button>
+          </nav>
+        </aside>
 
-              <div className="product-body">
-                <div className="product-top">
-                  <h3 className="product-name">{p.name}</h3>
-                  <span className="product-price">{p.price}</span>
-                </div>
-                <p className="product-note">{p.note}</p>
-              </div>
+        {/* Desktop sidebar (visible on md+) */}
+        <aside className="sd-sidebar">
+          <h3 className="sidebar-brand">Seller Panel</h3>
+          <nav className="sidebar-nav">
+            <a className="nav-item active">Dashboard</a>
+            <a
+              className="nav-item"
+              onClick={() => navigate("/seller/add-product")}
+            >
+              Add Product
+            </a>
+            <a className="nav-item" onClick={() => navigate("/seller/orders")}>
+              Orders
+            </a>
+            <a
+              className="nav-item"
+              onClick={() => navigate("/seller/settings")}
+            >
+              Store Settings
+            </a>
+            <button
+              className="nav-item logout"
+              onClick={() => {
+                /* logout */
+              }}
+            >
+              Logout
+            </button>
+          </nav>
+        </aside>
 
-              <div className="card-actions">
-                <button
-                  className="kebab-btn"
-                  aria-haspopup="true"
-                  aria-expanded={openMenuId === p._id}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenuId((cur) => (cur === p._id ? null : p._id));
-                  }}
-                >
-                  ⋮
-                </button>
-
-                {openMenuId === p._id && (
-                  <div
-                    className="kebab-menu"
-                    role="menu"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* FIX: Pass product id */}
-                    <a
-                      className="menu-item"
-                      href={`/manage-product/${p._id}`}
-                      style={{ textDecoration: "none", display: "block" }}
-                    >
-                      Manage
-                    </a>
-
-                    <button
-                      className="menu-item danger"
-                      onClick={() => handleDelete(p._id)}
-                    >
-                      Delete Product
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Edit sheet modal */}
-      {editOpen && (
-        <div className="sheet-backdrop" onClick={closeEditor}>
-          <div
-            className="sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="editStoreHeading"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 id="editStoreHeading" className="sheet-title">
-              Edit store
-            </h3>
-
-            <form onSubmit={saveEditor} className="sheet-form">
-              {/* FIX: correct keys */}
-              <div className="f">
-                <label htmlFor="sname">Name</label>
-                <input
-                  id="sname"
-                  type="text"
-                  value={draft.storeName}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, storeName: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-
-              <div className="f">
-                <label htmlFor="snote">Note</label>
-                <textarea
-                  id="snote"
-                  rows={3}
-                  value={draft.storeDescription}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      storeDescription: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="f">
-                <label htmlFor="sbanner">Banner image URL</label>
-                <input
-                  id="sbanner"
-                  type="url"
-                  placeholder="https://…/banner.svg"
-                  value={draft.bannerImage}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, bannerImage: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="actions">
-                <button
-                  type="button"
-                  className="btn light"
-                  onClick={closeEditor}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn primary">
-                  Save
-                </button>
-              </div>
-            </form>
+        {/* Main content */}
+        <main className="sd-main">
+          {/* Small Banner */}
+          <div className="sd-banner">
+            <img
+              src={storeData.bannerImage}
+              alt="Store banner"
+              className="sd-banner-img"
+            />
+            <div className="sd-banner-text">
+              <h1>{storeData.storeName}</h1>
+              <p className="muted">{storeData.storeDescription}</p>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* STYLES REMAIN SAME */}
+          {/* Analytics */}
+          <section className="sd-analytics">
+            <div className="stat-card">
+              <div className="stat-top">📦</div>
+              <div className="stat-value">{products.length}</div>
+              <div className="stat-label">Total Products</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-top">📈</div>
+              <div className="stat-value">₹0</div>
+              <div className="stat-label">Sales</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-top">👀</div>
+              <div className="stat-value">0</div>
+              <div className="stat-label">Visits</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-top">💰</div>
+              <div className="stat-value">₹0</div>
+              <div className="stat-label">Earnings</div>
+            </div>
+          </section>
+
+          {/* Recent orders + Top selling (stack on mobile) */}
+          <section className="sd-split">
+            {/* Recent Orders */}
+            <div className="card orders-card">
+              <div className="card-title">Recent Orders</div>
+
+              {recentOrders && recentOrders.length > 0 ? (
+                <div className="orders-list">
+                  {recentOrders.map((order) => (
+                    <div className="order-item" key={order._id}>
+                      <div>
+                        <div className="order-id">#{order.orderNumber}</div>
+                        <div className="order-amount">₹{order.amount}</div>
+                      </div>
+                      <div>
+                        <span className={`badge ${order.status.toLowerCase()}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-section">
+                  <div className="empty-icon">📭</div>
+                  <p>No recent orders.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Top Selling */}
+            <div className="card top-selling-card">
+              <div className="card-title">Top Selling</div>
+
+              {topSelling && topSelling.length > 0 ? (
+                topSelling.map((p) => (
+                  <div className="top-product" key={p._id}>
+                    <img src={p.coverPhoto || p.image || Banner} alt="" />
+                    <div>
+                      <div className="prod-name">{p.name}</div>
+                      <div className="prod-meta">{p.unitsSold} units sold</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-section">
+                  <div className="empty-icon">📦</div>
+                  <p>No top-selling products.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Product Grid */}
+          <section className="product-grid-section">
+            <div className="section-heading-row">
+              <h3 className="your-products">Your Products</h3>
+              <div>
+                <button
+                  className="btn small"
+                  onClick={() => navigate("/seller/add-product")}
+                >
+                  Add Product
+                </button>
+              </div>
+            </div>
+
+            <div className="product-grid" ref={containerRef}>
+              {products.map((p) => (
+                <article className="product-card" key={p._id}>
+                  {/* Kebab Button – top right */}
+                  <button
+                    className="kebab-toggle"
+                    aria-expanded={openMenuId === p._id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === p._id ? null : p._id);
+                    }}
+                  >
+                    ⋮
+                  </button>
+
+                  {/* Kebab dropdown */}
+                  {openMenuId === p._id && (
+                    <div
+                      className="kebab-menu"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className="menu-item"
+                        onClick={() =>
+                          navigate(`/seller/manage-product/${p._id}`)
+                        }
+                      >
+                        Manage
+                      </button>
+                      <button
+                        className="menu-item danger"
+                        onClick={() => handleDelete(p._id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Product Image */}
+                  <div className="product-media">
+                    <img src={p.coverPhoto || p.image || Banner} alt={p.name} />
+                  </div>
+
+                  {/* Product Details */}
+                  <div className="product-body">
+                    <h3 className="product-name">{p.name}</h3>
+
+                    {/* Description under product name */}
+                    <p className="product-description">
+                      {p.description?.slice(0, 60) || "No description"}...
+                    </p>
+
+                    <div className="product-meta">
+                      <span className="price">₹{p.price}</span>
+                      <span className="stock">
+                        {p.stock ? `${p.stock} in stock` : "Out of stock"}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
     </>
   );
 }

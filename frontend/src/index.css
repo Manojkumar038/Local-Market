@@ -3,13 +3,13 @@
 }
 
 
+
 .roboto-font {
   font-family: "Roboto", sans-serif;
   font-optical-sizing: auto;
-  font-weight: <weight>;
+  font-weight: 500;
   font-style: normal;
-  font-variation-settings:
-    "wdth" 100;
+  width: 100;
 }
 
 /* REMOVE THE FLEX — THIS WAS BREAKING LOGIN PAGE */
@@ -18,6 +18,13 @@ body, #root {
   height: 100%;
 }
 
+html, body {
+  overflow-x: hidden !important;
+  width: 100%;
+}
+
+
+
 /* keep the rest */
 body {
   padding: 0;
@@ -25,7 +32,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100vh;
-  background-image: url('./assets/wave.svg'); 
+  /* background-image: url('./assets/wave.svg');  */
+  background: #f7f8fb;
   background-repeat: no-repeat;
   background-attachment: fixed; 
   background-size: cover;

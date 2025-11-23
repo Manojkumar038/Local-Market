@@ -3,14 +3,14 @@ import Seller from "../../models/seller.js";
 export const createOrUpdateStore = async (req, res) => {
     try {
         const sellerId = req.user.userId; 
-        console.log(sellerId)
+       
         const {
             storeName,
             storeDescription,
-            storeBanner,
+            bannerImage,
             address
         } = req.body;
-
+        // console.log(bannerImage)
         if (!storeName) {
             return res.status(400).json({ message: "Store name is required" });
         }
@@ -25,7 +25,7 @@ export const createOrUpdateStore = async (req, res) => {
             {
                 storeName,
                 description: storeDescription,
-                storeBanner,
+                storeBanner: bannerImage,
                 address,
                 storeCreated: true
             },

@@ -6,11 +6,7 @@ export const authMiddleware = (req, res, next) => {
     if (!authorization) {
         return res.status(401).json({ message: "Access Denied. No Authorization header provided." });
     }
-
-
     const token = authorization.split(" ")[1];
-
-    // console.log("Token recieved at authMiddleware: \n" + token);
     if (!token) return res.status(401).json({ message: "Access Denied. No token provided." });
 
     try {
