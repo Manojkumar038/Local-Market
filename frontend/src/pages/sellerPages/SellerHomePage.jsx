@@ -383,9 +383,11 @@ export default function SellerHomePage() {
 
                     <div className="product-meta">
                       <span className="price">₹{p.price}</span>
-                      <span className="stock">
-                        {p.stock ? `${p.stock} in stock` : "Out of stock"}
-                      </span>
+                      {p.stock === 0 && (
+                        <span className="stock" style={{ color: "red" }}>
+                          Out of stock
+                        </span>
+                      )}
                     </div>
                   </div>
                 </article>

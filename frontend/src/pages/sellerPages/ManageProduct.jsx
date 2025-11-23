@@ -1,259 +1,443 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { uploadToCloudinary } from "../../components/UploadToCloud";
 import "../../styles/ManageProduct.css";
 
-const ManageProduct = () => {
+export default function ManageProduct() {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
-  const [productData, setProductData] = useState({
-    name: "",
-    price: "",
-    description: "",
-    highlights: [{ key: "", value: "" }],
-    images: [],
-  });
+  const [loading, setLoading] = useState(true);
+  const [productData, setProductData] = useState(null);
 
-  const [previewImages, setPreviewImages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [images, setImages] = useState([]); // [{ src, file }]
+  const [newImages, setNewImages] = useState([]); // File[]
+  const [deletedImages, setDeletedImages] = useState([]); // URLs to delete
 
-  // ✅ Get product from React Query cache
+  const newObjectUrlsRef = useRef([]);
+  const [tagInput, setTagInput] = useState("");
+
+  // ----------------------------
+  // FETCH PRODUCT
+  // ----------------------------
   useEffect(() => {
-    try {
-      const products = queryClient.getQueryData(["sellerProducts"]);
-      const product = products?.find((p) => p._id === productId);
+    let mounted = true;
 
-      if (!product) throw new Error("Product not found in cache");
+    const fetchProduct = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      setProductData(product);
-      setPreviewImages(product.images || []);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      setIsLoading(false);
-    }
-  }, [productId, queryClient]);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/seller/get-product-details/${productId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
+        const data = res.data.product;
+        if (!mounted) return;
+
+        // Set main product data
+        setProductData({
+          name: data.name || "",
+          description: data.description || "",
+          price: data.price ?? 0,
+          stock: data.stock ?? 0,
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          highlights: Array.isArray(data.highlights)
+            ? data.highlights.map((h) => ({
+                _id: h._id || null,
+                detail: h.detail || "",
+              }))
+            : [{ detail: "" }],
+          isActive: data.isActive ?? true,
+          rating: data.rating ?? 0,
+          NumberOfPeoplePurchased: data.NumberOfPeoplePurchased ?? 0,
+        });
+
+        // Load existing images
+        const existing = Array.isArray(data.images)
+          ? data.images.map((url) => ({ src: url, file: null }))
+          : [];
+        setImages(existing);
+      } catch (err) {
+        console.error("Failed to fetch product:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchProduct();
+
+    return () => {
+      mounted = false;
+      newObjectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      newObjectUrlsRef.current = [];
+    };
+  }, [productId]);
+
+  // ----------------------------
+  // INPUT HANDLERS
+  // ----------------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const numeric = ["price", "stock", "rating", "NumberOfPeoplePurchased"];
+
     setProductData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: numeric.includes(name) ? Number(value) : value,
     }));
   };
 
-  const handleHighlightChange = (index, field, value) => {
-    const newHighlights = [...productData.highlights];
-    newHighlights[index][field] = value;
+  // ----------------------------
+  // TAGS
+  // ----------------------------
+  const addTagFromInput = () => {
+    const raw = tagInput.trim();
+    if (!raw) return;
+
+    const parts = raw
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    setProductData((prev) => {
+      const updated = [...prev.tags];
+      parts.forEach((p) => {
+        if (!updated.includes(p)) updated.push(p);
+      });
+      return { ...prev, tags: updated };
+    });
+
+    setTagInput("");
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTagFromInput();
+    }
+    if (e.key === "Backspace" && tagInput === "") {
+      setProductData((prev) => ({
+        ...prev,
+        tags: prev.tags.slice(0, -1),
+      }));
+    }
+  };
+
+  const removeTag = (index) => {
     setProductData((prev) => ({
       ...prev,
-      highlights: newHighlights,
+      tags: prev.tags.filter((_, i) => i !== index),
     }));
   };
 
-  const addHighlight = () => {
-    setProductData((prev) => ({
-      ...prev,
-      highlights: [...prev.highlights, { key: "", value: "" }],
-    }));
+  // ----------------------------
+  // HIGHLIGHTS
+  // ----------------------------
+  const handleHighlightChange = (i, value) => {
+    setProductData((prev) => {
+      const updated = [...prev.highlights];
+      updated[i].detail = value;
+      return { ...prev, highlights: updated };
+    });
   };
 
-  const removeHighlight = (index) => {
+  const addHighlight = () =>
     setProductData((prev) => ({
       ...prev,
-      highlights: prev.highlights.filter((_, i) => i !== index),
+      highlights: [...prev.highlights, { detail: "" }],
     }));
-  };
 
+  const removeHighlight = (i) =>
+    setProductData((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, idx) => idx !== i),
+    }));
+
+  // ----------------------------
+  // IMAGES
+  // ----------------------------
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newPreviewImages = files.map((file) => URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    setProductData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...files],
-    }));
+    const newObjs = files.map((file) => {
+      const url = URL.createObjectURL(file);
+      newObjectUrlsRef.current.push(url);
+      return { src: url, file };
+    });
 
-    setPreviewImages((prev) => [...prev, ...newPreviewImages]);
+    setImages((prev) => [...prev, ...newObjs]);
+    setNewImages((prev) => [...prev, ...files]);
   };
 
   const removeImage = (index) => {
-    setProductData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+    const img = images[index];
+    if (!img) return;
 
-    URL.revokeObjectURL(previewImages[index]);
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    // If existing image, mark for deletion
+    if (!img.file) {
+      setDeletedImages((prev) => [...prev, img.src]);
+    } else {
+      // If new image, remove from pending uploads
+      setNewImages((prev) =>
+        prev.filter((file) => file.name !== img.file.name)
+      );
+      URL.revokeObjectURL(img.src);
+    }
+
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const toggleIsActive = () =>
+    setProductData((prev) => ({ ...prev, isActive: !prev.isActive }));
+
+  // ----------------------------
+  // SUBMIT FORM
+  // ----------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const formData = new FormData();
-      formData.append("productId", productId);
-      formData.append("name", productData.name);
-      formData.append("price", productData.price);
-      formData.append("description", productData.description);
-      formData.append("highlights", JSON.stringify(productData.highlights));
-
-      productData.images.forEach((image) => {
-        if (image instanceof File) {
-          formData.append("images", image);
-        }
-      });
-
       const token = localStorage.getItem("token");
 
-      await fetch(
+      // 1️⃣ Upload NEW images to Cloudinary
+      const uploadedUrls = [];
+      for (const file of newImages) {
+        const url = await uploadToCloudinary(file);
+        uploadedUrls.push(url);
+      }
+
+      // 2️⃣ Final image list = existing not removed + new uploads
+      const finalImages = [
+        ...images.filter((img) => img.file === null).map((img) => img.src),
+        ...uploadedUrls,
+      ];
+
+      // 3️⃣ Request backend to delete removed images
+      if (deletedImages.length > 0) {
+        await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/seller/delete-cloudinary-image`,
+          { images: deletedImages },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      // 4️⃣ Update product details with final images
+      await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/seller/update-product`,
         {
-          method: "PUT",
-          body: formData,
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // ✅ Update React Query cache
-      queryClient.setQueryData(["sellerProducts"], (old) =>
-        old.map((p) => (p._id === productId ? { ...p, ...productData } : p))
+          productId,
+          ...productData,
+          images: finalImages,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Product updated successfully!");
-      navigate("/seller/home");
-    } catch (error) {
-      console.error("Error updating product:", error);
-      alert("Failed to update product");
+      navigate("/seller");
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert("Update failed. See console for details.");
     }
   };
 
-  if (isLoading) {
-    return <div className="loading">Loading...</div>;
+  // ----------------------------
+  // LOADING
+  // ----------------------------
+  if (loading || !productData) {
+    return <h2 style={{ padding: 20 }}>Loading product…</h2>;
   }
 
+  // ----------------------------
+  // UI
+  // ----------------------------
   return (
-    <div className="manage-product-container">
-      <div className="manage-product-form">
-        <button
-          type="button"
-          className="abort-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Close"
-        >
-          ×
+    <div className="manage-wrapper">
+      <header className="top-header">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          ←
         </button>
-        <h2 className="heading">Edit Product Details</h2>
+        <h1>Edit Product</h1>
+      </header>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
+      <form className="modern-form" onSubmit={handleSubmit}>
+        {/* BASIC INFO */}
+        <section className="section-card">
+          <h2 className="section-title">Basic Information</h2>
+
+          <div className="input-group">
             <label>Product Name</label>
             <input
-              type="text"
               name="name"
               value={productData.name}
               onChange={handleChange}
-              required
             />
           </div>
 
-          <div className="form-group">
-            <label>Price</label>
-            <input
-              type="number"
-              name="price"
-              value={productData.price}
-              onChange={handleChange}
-              required
-            />
+          <div className="input-row">
+            <div className="input-group">
+              <label>Price (₹)</label>
+              <input
+                name="price"
+                type="number"
+                value={productData.price}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Stock</label>
+              <input
+                name="stock"
+                type="number"
+                value={productData.stock}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
-          <div className="form-group">
+          <div className="input-group">
             <label>Description</label>
             <textarea
+              rows={4}
               name="description"
               value={productData.description}
               onChange={handleChange}
-              rows="4"
-              required
             />
           </div>
+        </section>
 
-          <div className="form-group">
-            <label>Product Highlights</label>
-            {productData.highlights.map((highlight, i) => (
-              <div key={i} className="highlight-row">
-                <input
-                  type="text"
-                  placeholder="Key"
-                  value={highlight.key}
-                  onChange={(e) =>
-                    handleHighlightChange(i, "key", e.target.value)
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Value"
-                  value={highlight.value}
-                  onChange={(e) =>
-                    handleHighlightChange(i, "value", e.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  className="remove-btn"
-                  onClick={() => removeHighlight(i)}
-                >
+        {/* TAGS */}
+        <section className="section-card">
+          <h2 className="section-title">Tags</h2>
+          <div className="tags-container">
+            {productData.tags.map((t, i) => (
+              <span className="tag-chip" key={i}>
+                {t}
+                <button type="button" onClick={() => removeTag(i)}>
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <div className="tags-input-row">
+            <input
+              placeholder="Add tag"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+            />
+            <button
+              type="button"
+              className="small-button"
+              onClick={addTagFromInput}
+            >
+              Add
+            </button>
+          </div>
+        </section>
+
+        {/* HIGHLIGHTS */}
+        <section className="section-card">
+          <h2 className="section-title">Highlights</h2>
+
+          {productData.highlights.map((h, i) => (
+            <div className="highlight-box" key={i}>
+              <textarea
+                rows={2}
+                value={h.detail}
+                onChange={(e) => handleHighlightChange(i, e.target.value)}
+              />
+              <button
+                className="remove-highlight"
+                onClick={() => removeHighlight(i)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            className="add-highlight-btn"
+            onClick={addHighlight}
+          >
+            + Add Highlight
+          </button>
+        </section>
+
+        {/* IMAGES */}
+        <section className="section-card">
+          <h2 className="section-title">Images</h2>
+
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageChange}
+          />
+
+          <div className="image-grid">
+            {images.map((img, i) => (
+              <div className="image-item" key={i}>
+                <img src={img.src} />
+                <button className="delete-image" onClick={() => removeImage(i)}>
                   ×
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              className="add-highlight-btn"
-              onClick={addHighlight}
-            >
-              Add Highlight
-            </button>
           </div>
+        </section>
 
-          <div className="form-group">
-            <label>Product Images</label>
+        {/* STATUS */}
+        <section className="section-card">
+          <h2 className="section-title">Product Status</h2>
+
+          <div className="switch-row">
+            <span>Active Product</span>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={productData.isActive}
+                onChange={toggleIsActive}
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        {/* META */}
+        <section className="input-row section-card">
+          <div className="input-group">
+            <label>Total Purchases</label>
             <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-              className="file-input"
+              name="NumberOfPeoplePurchased"
+              type="number"
+              value={productData.NumberOfPeoplePurchased}
+              onChange={handleChange}
             />
-            <div className="image-preview-container">
-              {previewImages.map((src, index) => (
-                <div key={index} className="image-preview">
-                  <img src={src} alt={`Preview ${index + 1}`} />
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={() => removeImage(index)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <button type="submit" className="submit-btn">
-            Update Product
-          </button>
-        </form>
-      </div>
+          <div className="input-group">
+            <label>Rating</label>
+            <input
+              name="rating"
+              type="number"
+              step="0.1"
+              value={productData.rating}
+              onChange={handleChange}
+            />
+          </div>
+        </section>
+
+        <button className="save-button">Save Changes</button>
+      </form>
     </div>
   );
-};
-
-export default ManageProduct;
+}

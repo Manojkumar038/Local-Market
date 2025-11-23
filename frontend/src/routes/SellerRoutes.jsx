@@ -14,7 +14,7 @@ export default function SellerRoutes() {
       <Route element={<ProtectRoutes />}>
         <Route index element={<StorePage />} />
         <Route path="add-product" element={<AddProducts />} />
-        <Route path="manage-product" element={<ManageProduct />} />
+        <Route path="manage-product/:productId" element={<ManageProduct />} />
         <Route path="create-store" element={<CreateStore />} />
         <Route path="settings" element={<SellerSettings />} />
       </Route>

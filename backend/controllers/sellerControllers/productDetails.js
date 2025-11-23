@@ -7,7 +7,7 @@ export const addProduct = async (req, res) => {
     const { coverPhoto, images, name, description, price, highlights } = req.body;
     const storeId = req.user.userId;
 
-    console.log(req.body);
+    // console.log(req.body);
 
     if (!storeId || !name || !price || !coverPhoto) {
         return res.status(400).json({ message: 'storeId, name, and price, coverPhoto are required.' });
@@ -72,13 +72,13 @@ export const updateProduct = async (req, res) => {
 // Get all products for a store
 export const getAllProducts = async (req, res) => {
     const { storeId } = req.query;
-    console.log(storeId)
+    // console.log(storeId)
 
     if (!storeId) return res.status(400).json({ message: 'storeId is required.' });
     
     try {
         const products = await Product.find({ storeId });
-        console.log(products)
+        // console.log(products)
 
         return res.status(200).json({ message: 'Products fetched successfully.', products });
     } catch (error) {
@@ -92,11 +92,10 @@ export const getProductDetails = async (req, res) => {
 
     try {
         const { productId } = req.params;
-
         if (!productId) return res.status(400).json({ success: false, message: "Product Id is required." });
 
-        const product = await Product.findOne({ productId });
-
+        const product = await Product.findOne({ _id: productId });
+        // console.log(product);
         if (!product) return res.status(404).json({ success: false, message: "Product not found." });
 
         return res.status(200).json({

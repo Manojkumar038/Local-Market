@@ -397,6 +397,7 @@
 
 .product-meta {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   font-size: 16px;
   color: #6b7280;
@@ -413,6 +414,7 @@
   position: relative;
   background: white;
   border-radius: 12px;
+  width: 200px;
   overflow: visible;     /* IMPORTANT */
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
