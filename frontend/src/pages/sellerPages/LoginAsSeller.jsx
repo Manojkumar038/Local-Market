@@ -157,7 +157,6 @@ export default function AuthPage() {
   .auth {
     min-height: 100vh;
     min-width: 100vw;
-
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -168,6 +167,7 @@ export default function AuthPage() {
   .card {
     width: 100%;
     max-width: 420px;
+    margin-right: 12%;
     background: #fff;
     border-radius: 14px;
     padding: 22px 22px 16px;

@@ -4,10 +4,13 @@ import Banner from "../../assets/banner.svg";
 import "../../styles/Dashboard.css";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../../components/NavBar.jsx";
+import { useAuth } from "../../context/AuthContext"; 
+
 
 
 export default function SellerHomePage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
@@ -97,6 +100,7 @@ export default function SellerHomePage() {
   return (
     <>
       <NavBar showMenu={false}></NavBar>
+
       <div className="sd-wrapper">
         {/* Topbar - shows hamburger on mobile */}
         <header className="sd-topbar">
@@ -166,6 +170,7 @@ export default function SellerHomePage() {
                 setDrawerOpen(false);
                 navigate("/seller");
               }}
+              style={{ opacity: 0.5, pointerEvents: "none" }}
             >
               Orders
             </a>
@@ -181,7 +186,8 @@ export default function SellerHomePage() {
             <button
               className="nav-item logout"
               onClick={() => {
-                setDrawerOpen(false); /* logout logic */
+                logout();
+                navigate("/seller/login");
               }}
             >
               Logout
@@ -200,7 +206,11 @@ export default function SellerHomePage() {
             >
               Add Product
             </a>
-            <a className="nav-item" onClick={() => navigate("/seller/orders")}>
+            <a
+              className="nav-item"
+              onClick={() => navigate("/seller/orders")}
+              style={{ opacity: 0.5, pointerEvents: "none" }}
+            >
               Orders
             </a>
             <a
@@ -212,7 +222,8 @@ export default function SellerHomePage() {
             <button
               className="nav-item logout"
               onClick={() => {
-                /* logout */
+                logout();
+                navigate("/seller/login");
               }}
             >
               Logout
@@ -328,10 +339,14 @@ export default function SellerHomePage() {
                 </button>
               </div>
             </div>
-
             <div className="product-grid" ref={containerRef}>
               {products.map((p) => (
-                <article className="product-card" key={p._id}>
+                <article
+                  className="product-card"
+                  key={p._id}
+                  onClick={() => navigate(`/seller/product-details/${p._id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   {/* Kebab Button – top right */}
                   <button
                     className="kebab-toggle"
@@ -376,7 +391,6 @@ export default function SellerHomePage() {
                   <div className="product-body">
                     <h3 className="product-name">{p.name}</h3>
 
-                    {/* Description under product name */}
                     <p className="product-description">
                       {p.description?.slice(0, 60) || "No description"}...
                     </p>

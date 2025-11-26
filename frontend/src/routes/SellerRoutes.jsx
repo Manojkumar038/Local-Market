@@ -7,6 +7,8 @@ import VerifySeller from "../pages/sellerPages/VerifySeller.jsx";
 import ProtectRoutes from "../pages/sellerPages/ProtectRoutes.jsx";
 import CreateStore from "../pages/sellerPages/CreateStore.jsx";
 import SellerSettings from "../pages/sellerPages/Settings.jsx"
+import SellerProductDetails from "../pages/sellerPages/ProductDetails.jsx";
+
 
 export default function SellerRoutes() {
   return (
@@ -17,6 +19,7 @@ export default function SellerRoutes() {
         <Route path="manage-product/:productId" element={<ManageProduct />} />
         <Route path="create-store" element={<CreateStore />} />
         <Route path="settings" element={<SellerSettings />} />
+        <Route path="product-details/:productId" element={<SellerProductDetails/>} />
       </Route>
 
       <Route path="login" element={<LoginSeller />} />
