@@ -1,9 +1,9 @@
-import bcrytp from 'bcryptjs'; 
+import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken'; 
 import mailgun from 'mailgun-js';
 import dotenv from 'dotenv';
 dotenv.config({ path: `.env.development`, quiet: true });
-import PendingUser from '../../models/temp.js';
+import PendingUser from '../../models/userTemp.js';
 import User from '../../models/user.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -27,8 +27,8 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({message: "User already exists..Please Login."});
         }
 
-        const hashedPassword = await bcrytp.hash(password, 10);
-        console.log(`From ${__filename} \n Hashed Password: ` + hashedPassword);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        // console.log(`From ${__filename} \n Hashed Password: ` + hashedPassword);
 
         const token = jwt.sign(
             {
@@ -44,7 +44,7 @@ export const registerUser = async (req, res) => {
 
         await pendingUser.save();
 
-        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/user/verify?token=${token}&type=signup`;
 
         const mailOptions = {
             from: "Verify <noreply@ledger>",
@@ -55,7 +55,7 @@ export const registerUser = async (req, res) => {
 
         await mg.messages().send(mailOptions);
 
-        res.status(200).json({message: `SignUp Sucessfull from ${__filename}`});
+        res.status(200).json({message: `A Verification link has been sent to your Mail. Please check.`});
 
     } catch (error) {
         console.log(`Error from ${__filename} \n` + error);
@@ -71,11 +71,11 @@ export const loginUser = async (req, res) => {
         
         if(!user) return res.status(400).json({message: 'User not found. Please signup!!'});
 
-        console.log(user.password);
-        const match = await bcrytp.compare(password, user.password);
+        // console.log(user.password);
+        const match = await bcrypt.compare(password, user.password);
 
         if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
-
+        // console.log(user._id)
         const token = jwt.sign(
             {
                 userId: user._id,
@@ -85,7 +85,7 @@ export const loginUser = async (req, res) => {
             { expiresIn: "4m" }
         );
 
-        const magicLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+        const magicLink = `${process.env.FRONTEND_URL}/user/verify?token=${token}&type=login`;
 
         const mailOptions = {
             from: "Verify <noreply@ledger>",

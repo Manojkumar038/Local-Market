@@ -1,0 +1,310 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  background: #f8fafc;
+}
+
+
+/* ========== NAVBAR ========== */
+.nav {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+
+.search {
+  flex: 1;
+  margin: 0 10px;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  font-size: 13px;
+}
+
+.icons {
+  display: flex;
+  gap: 12px;
+  font-size: 16px;
+}
+
+.icon-btn {
+  background: rgb(243, 238, 238);
+  border: none;
+  font-size: 18px;
+  width: 50px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 22px ;
+  transition:  0.2s;
+}
+
+.icon-btn:hover {
+  background: #f2f2f2;
+}
+
+
+/* ========== HERO ========== */
+.hero {
+  background: linear-gradient(to right, #fff2e7, #fff);
+  text-align: center;
+  padding: 50px 15px;
+  
+}
+
+.hero h1 {
+  font-size: 16px;
+}
+
+.hero p {
+  color: #666;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.hero-buttons {
+  margin-top: 18px;
+}
+
+.hero-buttons button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+
+/* ========== BUTTONS ========== */
+.btn-orange {
+  background: #ff7f24;
+  font-size: 16px;
+  border: none;
+  color: white;
+  padding: 10px 0;
+  border-radius: 24px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.btn-outline {
+  border: 1px solid #ccc;
+  font-size: 16px;
+  background: white;
+  padding: 10px 0;
+  border-radius: 24px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.btn-orange,
+.btn-outline {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, 0.18s ease;
+}
+
+.small {
+  padding: 7px 10px;
+  font-size: 12px;
+  height: 34px;
+  width: 100px;
+}
+
+.light-btn {
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  padding: 3px 10px;
+  background: white;
+  font-size: 12px;
+  width: 100px;
+  height: 38px;
+   cursor: pointer;
+}
+
+.btn-orange:hover {
+  background: #e85f00;
+  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.35);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-outline:hover {
+  background: #f7f7f7;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-orange:active,
+.btn-outline:active {
+  transform: scale(0.96);
+} 
+
+
+/* ========== SECTIONS ========== */
+.block {
+  padding: 30px 12px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+  align-items: center;
+}
+
+.section-head h2 {
+  font-size: 16px;
+}
+
+.section-head p {
+  font-size: 14px;
+  color: #666;
+}
+
+
+/* ========== CATEGORIES ========== */
+.categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.category-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.category-card .icon {
+  font-size: 20px;
+}
+
+.category-card span {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+
+/* ========== STORES ========== */
+.stores {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.store-card {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.store-card img {
+  height: 140px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.store-body {
+  padding: 10px;
+}
+
+.store-body h3 {
+  font-size: 14px;
+}
+
+.store-body p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+
+/* ========== FOOTER ========== */
+footer {
+  background: white;
+  border-top: 1px solid #eee;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+
+/* ========== TABLET (>=768px) ========== */
+@media (min-width: 768px) {
+
+  .nav {
+    padding: 0 5%;
+    height: 64px;
+  }
+
+  .search {
+    max-width: 420px;
+    margin: auto;
+  }
+
+  .hero {
+    padding: 70px 20px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+  }
+
+  .hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .hero-buttons button {
+    width: auto;
+    min-width: 160px;
+  }
+
+  .block {
+    padding: 50px 5%;
+  }
+
+  .categories {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .stores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  footer {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .icon-btn {
+    width: 100px;
+  }
+}
+
+
+/* ========== DESKTOP (>=1024px) ========== */
+@media (min-width: 1024px) {
+
+  .stores {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .hero h1 {
+    font-size: 38px;
+  }
+
+  .icon-btn {
+    width: 100px;
+  }
+}

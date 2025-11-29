@@ -5,112 +5,73 @@ import logo from "../assets/logo.svg";
 import userProfileIcon from "../assets/userProfileIcon.svg";
 
 export default function NavBar({
-  showMenu = true, 
-  menuItems = [], 
+  showMenu = true,
+  menuItems = [],
   showLinks = false,
-  links = [], // 
-  appName = "Local Market",
+  links = [],
+  appName = "ShopHub",
+  showSearch = false,
+  searchValue = "",
+  onSearchChange,
 }) {
   const [open, setOpen] = useState(false);
-  const menuRef = useRef(null);
-  const btnRef = useRef(null);
+  const menuRef = useRef();
+  const btnRef = useRef();
 
-  // close menu when clicking outside
   useEffect(() => {
-    if (!showMenu) return;
-
-    const handleOutside = (e) => {
+    const handler = (e) => {
       if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target)
+        !menuRef.current?.contains(e.target) &&
+        !btnRef.current?.contains(e.target)
       ) {
         setOpen(false);
       }
     };
-
-    const handleEscape = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [showMenu]);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <header className="nav">
-      {/* Left - Brand */}
       <div className="nav-left">
-        <Link to="/" className="brand">
-          <img
-            src={logo}
-            alt="Logo"
-            style={{ width: "50px", height: "50px" }}
-          />
+        <Link className="brand" to="/">
+          <img src={logo} alt="logo" />
           <span className="app-name">{appName}</span>
         </Link>
-
-        {/* Optional top-level navigation links */}
-        {showLinks && (
-          <nav className="nav-links">
-            {links.map((l, i) => (
-              <Link key={i} to={l.href} className="nav-link">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        )}
       </div>
 
-      {/* Right - Menu (toggleable) */}
+      {showSearch && (
+        <div className="nav-search">
+          <input
+            value={searchValue}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            placeholder="Search for products, stores..."
+          />
+        </div>
+      )}
+
       {showMenu && (
         <div className="nav-right">
           <button
             ref={btnRef}
             className="avatar-btn"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen(!open)}
           >
-            <img
-              src={userProfileIcon}
-              style={{ width: "35px", height: "35px" }}
-              alt="User Icon"
-            />
+            <img src={userProfileIcon} alt="user" />
           </button>
 
           {open && (
             <div ref={menuRef} className="menu">
-              {menuItems.length > 0 ? (
-                menuItems.map((item, index) =>
-                  item.href ? (
-                    <Link
-                      key={index}
-                      to={item.href}
-                      className="menu-item"
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <button
-                      key={index}
-                      className="menu-item"
-                      onClick={() => {
-                        item.onClick?.();
-                        setOpen(false);
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  )
+              {menuItems.map((item, i) =>
+                item.href ? (
+                  <Link key={i} to={item.href} className="menu-item">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button key={i} className="menu-item" onClick={item.onClick}>
+                    {item.label}
+                  </button>
                 )
-              ) : (
-                <div className="menu-item muted">No actions available</div>
               )}
             </div>
           )}

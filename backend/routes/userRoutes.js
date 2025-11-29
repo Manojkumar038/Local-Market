@@ -8,9 +8,9 @@ const router = express.Router();
 
 //Routes 
 router.post('/signup', registerUser);
-router.post('/verify-user', verifyUser);
+router.get('/verify-user', verifyUser);
 router.post('/login-user', loginUser);
-router.post('/verify-user-login', verifyLogin);
+router.get('/verify-user-login', verifyLogin);
 router.post('/verify-google-login', verifyGoogleLogin);
 
 router.get('/get-stores', getStores);

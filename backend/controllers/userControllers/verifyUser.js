@@ -1,18 +1,20 @@
 import jwt from 'jsonwebtoken';
-import PendingUser from '../../models/temp.js';
+import PendingUser from '../../models/userTemp.js';
 import User from '../../models/user.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { decode } from 'punycode';
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-
 export const verifyUser = async (req, res) => {
     try {
         const { token } = req.query;
+        
 
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
@@ -46,33 +48,39 @@ export const verifyUser = async (req, res) => {
 export const verifyLogin = async (req, res) => {
     try {
         const { token } = req.query;
-
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        
+        const user = await User.findOne({ email: decoded.email });
+        
+        if (!user) {
+            return res.status(404).json({ message: "User does not exist." });
+        }
 
-        if (!decoded) return res.status(400).json({ message: 'Request Expired. Please try again.' });
-
-
+        
         const loginToken = jwt.sign(
-            { userId: decoded._id, email: decoded.email },
+            {
+                userId: user._id,
+                email: user.email
+            },
             process.env.SECRET_KEY,
+            { expiresIn: "5h" }
         );
 
         res.status(200).json({
-            message: 'Login Sucessful.',
+            message: 'Login Successful.',
             token: loginToken,
-            userId: decoded.userId,
-            email: decoded.email
+            userId: user._id,
+            email: user.email
         });
 
-
     } catch (error) {
-        console.log(`Error from ${__filename} \n` + error);
-        if (error.name === 'TokenExpiredError') {
-            return res.status(400).json({ message: "Verification link has expired" });
+        console.log(error);
+        if (error.name === "TokenExpiredError") {
+            return res.status(400).json({ message: "Verification link expired" });
         }
-        res.status(500).json({ message: "Error occurred!! Please try again." });
+        res.status(500).json({ message: "Invalid or expired link" });
     }
-}
+};
 
 export const verifyGoogleLogin = async (req, res) => {
     const { email, name, picture } = req.body;

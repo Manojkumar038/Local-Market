@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { useAuth } from "../../context/UserAuthContext.jsx";
 import "../../styles/verifySeller.css";
 
 const VerifyMagicLink = () => {
@@ -11,49 +11,68 @@ const VerifyMagicLink = () => {
 
   useEffect(() => {
     const verifyToken = async () => {
+
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
-      const type = params.get("type"); // login OR signup
+      const type = params.get("type").toString();
+      
+      if (!["signup", "login"].includes(type)) {
+        alert("Invalid verification type.");
+        navigate("/login");
+        return;
+      }
+
       const server_url = import.meta.env.VITE_BACKEND_URL;
+      
       if (!token) {
-        alert("Invalid link");
-        setLoading(false);
-        navigate("/seller/login");
+        alert("Invalid link fromm this ");
+        localStorage.removeItem("redirectAfterLogin");
+        navigate("/login");
         return;
       }
 
       try {
-        // Decide API endpoint based on "type"
         const endpoint =
           type === "signup"
-            ? `${server_url}/api/seller/verify-seller?token=${token}`
-            : `${server_url}/api/seller/verify-seller-login?token=${token}`;
+            ? `${server_url}/api/user/verify-user?token=${encodeURIComponent(
+                token
+              )}`
+            : `${server_url}/api/user/verify-user-login?token=${encodeURIComponent(
+                token
+              )}`;
 
         const response = await axios.get(endpoint);
         const data = response.data;
 
+        console.log(data)
+
         if (type === "signup") {
-          // Signup verified
           alert("Signup verified successfully! Please log in.");
-          navigate("/seller/login");
+          navigate("/login");
         } else {
-          // Login verified → Set session
-          const now = new Date().getTime();
-          const expiryTime = new Date(now + 5 * 60 * 60 * 1000);
-          login(data.token, expiryTime);
-          navigate("/seller/");
+          const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+          login(data.token, data.user || null, expiryTime);
+
+          const redirectPath = localStorage.getItem("redirectAfterLogin");
+          if (redirectPath) {
+            localStorage.removeItem("redirectAfterLogin");
+            navigate(redirectPath);
+          } else {
+            navigate("/");
+          }
         }
       } catch (error) {
         console.error("Verification error:", error);
         alert("Invalid or expired link.");
-        navigate("/seller/login");
+        localStorage.removeItem("redirectAfterLogin"); // ✅ added safety
+        navigate("/login");
       } finally {
         setLoading(false);
       }
     };
 
     verifyToken();
-  }, [navigate]);
+  }, [navigate, login]);
 
   return (
     <div className="verify-container">

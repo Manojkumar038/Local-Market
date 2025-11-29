@@ -14,7 +14,6 @@ const __filename = fileURLToPath(import.meta.url);
 export const verifyUser = async (req, res) => {
     try {
         const { token } = req.query;
-
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
         const pendingUser = await PendingUser.findOne({

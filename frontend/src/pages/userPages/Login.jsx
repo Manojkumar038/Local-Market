@@ -1,9 +1,11 @@
 // AuthPage.jsx
 import React, { useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login"); // 'login' | 'signup'
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const onGoogleSuccess = (cred) => {
     // cred contains {credential: <JWT>, select_by: ...}
@@ -18,15 +20,42 @@ export default function AuthPage() {
 
   const switchMode = () => setMode((m) => (m === "login" ? "signup" : "login"));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
+    console.log(data);
     if (mode === "login") {
-      // POST /api/auth/login
-      console.log("Login:", data);
+      try {
+        const loginResponse = await axios.post(
+          `${backendUrl}/api/user/login-user`,
+          data
+        );
+        
+        console.log("Login response:", loginResponse);
+        alert(loginResponse.data.message);
+      } catch (error) { 
+        console.log("Login error:", error);
+        alert(
+          error.response?.data?.message ||
+            "An error occurred during login. Please try again."
+        );
+      }
     } else {
-      // POST /api/auth/signup
-      console.log("Signup:", data);
+      try {
+        const signUpResponse = await axios.post(
+          `${backendUrl}/api/user/signup`,
+          data
+        );
+
+        console.log("Login response:", signUpResponse);
+        alert(signUpResponse.data.message);
+      } catch (error) {
+        console.log("Login error:", error);
+        alert(
+          error.response?.data?.message ||
+            "An error occurred during signUp. Please try again."
+        );
+      }
     }
   };
 
