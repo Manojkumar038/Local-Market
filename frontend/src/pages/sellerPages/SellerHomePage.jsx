@@ -6,8 +6,6 @@ import { useNavigate } from "react-router-dom";
 import NavBar from "../../components/NavBar.jsx";
 import { useAuth } from "../../context/AuthContext"; 
 
-
-
 export default function SellerHomePage() {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -20,10 +18,38 @@ export default function SellerHomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  //Store Id
+  const [storeId, setStoreId] = useState(null);
+
   const containerRef = useRef(null);
 
   const recentOrders = []; // or fetched data later
   const topSelling = []; // or fetched data later
+
+  const handleShare = async () => {
+    if (!storeId || !storeData) return;
+
+    const shareUrl = `${window.location.origin}/store/${storeId}`;
+    const shareText = `Check out ${storeData.storeName} on Local Market!\n\n${shareUrl}`;
+
+    // ✅ Mobile native share
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: storeData.storeName,
+          text: `Check out ${storeData.storeName} on Local Market`,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error("Share cancelled", err);
+      }
+      return;
+    }
+
+    // ✅ Desktop WhatsApp fallback
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -36,6 +62,8 @@ export default function SellerHomePage() {
         );
 
         const seller = sellerResponse.data;
+
+        setStoreId(seller._id);
 
         const formattedStore = {
           storeCreated: seller.storeCreated,
@@ -154,6 +182,16 @@ export default function SellerHomePage() {
             >
               Dashboard
             </a>
+            <button
+              className="nav-item"
+              onClick={handleShare}
+              style={{
+                border: "none",
+                fontSize: "16px",
+              }}
+            >
+              🔗 Share Store
+            </button>
 
             <a
               className="nav-item"
@@ -200,6 +238,16 @@ export default function SellerHomePage() {
           <h3 className="sidebar-brand">Seller Panel</h3>
           <nav className="sidebar-nav">
             <a className="nav-item active">Dashboard</a>
+            <button
+              className="nav-item"
+              onClick={handleShare}
+              style={{
+                border: "none",
+                fontSize: "16px",
+              }}
+            >
+              🔗 Share Store
+            </button>
             <a
               className="nav-item"
               onClick={() => navigate("/seller/add-product")}

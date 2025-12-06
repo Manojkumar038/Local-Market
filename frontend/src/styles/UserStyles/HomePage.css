@@ -220,6 +220,7 @@ body {
 }
 
 .store-body p {
+  margin-bottom: 10px;
   font-size: 14px;
   color: #666;
   margin-bottom: 8px;
@@ -287,6 +288,7 @@ footer {
     flex-direction: row;
     justify-content: space-between;
   }
+  
   .icon-btn {
     width: 100px;
   }
@@ -307,4 +309,55 @@ footer {
   .icon-btn {
     width: 100px;
   }
+  .categories {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .store-body p {
+    margin-bottom: 50px;
+  }
+}
+
+.account-menu-container {
+  position: relative;
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  width: 150px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 999;
+  animation: fadeIn 0.15s ease;
+}
+
+.menu-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: #f4f4f4;
+}
+
+.menu-item.logout {
+  color: red;
+  border-top: 1px solid #eee;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }

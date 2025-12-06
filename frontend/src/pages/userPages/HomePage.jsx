@@ -2,11 +2,49 @@ import "../../styles/UserStyles/HomePage.css";
 import logo from "../../assets/logo.svg";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/UserAuthContext.jsx";
+import { useState, useRef, useEffect } from "react";
+import axios from 'axios';
 
 export default function Home() {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   const isLoggedIn = !!token;
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef();
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+
+        const res = await axios.get(`${backendUrl}/api/user/get-stores`);
+        console.log(res);
+        setStores(res.data.stores);
+        console.log(stores)
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStores();
+  }, []);
+
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
 
   const categories = [
     { name: "For You", icon: "✨" },
@@ -15,28 +53,6 @@ export default function Home() {
     { name: "Home", icon: "🏠" },
   ];
 
-  const stores = [
-    {
-      title: "Tech Nexus Electronics",
-      desc: "Your go-to hub for the latest smartphones, laptops, and smart home gadgets.",
-      img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-    },
-    {
-      title: "The Artisan Bakery",
-      desc: "Handcrafted bread, gourmet pastries, and morning coffee brewed with love.",
-      img: "https://images.unsplash.com/photo-1542831371-d531d36971e6",
-    },
-    {
-      title: "EcoThread Apparel",
-      desc: "Sustainable and ethically produced clothing for all seasons.",
-      img: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f",
-    },
-    {
-      title: "Home Harmony Decor",
-      desc: "Transform your living space with contemporary home décor.",
-      img: "https://images.unsplash.com/photo-1505693314120-0d443867891c",
-    },
-  ];
 
   return (
     <div>
@@ -44,8 +60,8 @@ export default function Home() {
       <header className="nav">
         <div className="logo">
           <img src={logo} alt="Logo" style={{ height: 46, width: 46 }} />
+          <span className="app-name">Local Market</span>
         </div>
-
         <input
           className="search"
           placeholder="Search for products, stores..."
@@ -61,9 +77,50 @@ export default function Home() {
               <button className="icon-btn" title="Cart">
                 🛒
               </button>
-              <button className="icon-btn" title="Account">
-                👤
-              </button>
+              <div className="account-menu-container" ref={menuRef}>
+                <button
+                  className="icon-btn"
+                  title="Account"
+                  onClick={() => setShowMenu(!showMenu)}
+                >
+                  👤
+                </button>
+
+                {showMenu && (
+                  <div className="account-menu">
+                    <div
+                      className="menu-item"
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate("/profile");
+                      }}
+                    >
+                      👤 Profile
+                    </div>
+
+                    <div
+                      className="menu-item"
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate("/orders");
+                      }}
+                    >
+                      📦 Orders
+                    </div>
+
+                    <div
+                      className="menu-item logout"
+                      onClick={() => {
+                        setShowMenu(false);
+                        localStorage.clear();
+                        navigate("/login");
+                      }}
+                    >
+                      🚪 Logout
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
 
@@ -151,16 +208,30 @@ export default function Home() {
         </div>
 
         <div className="stores">
-          {stores.map((s) => (
-            <div className="store-card" key={s.title}>
-              <img src={s.img} alt={s.title} />
-              <div className="store-body">
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
-                <button className="btn-orange small">➜ Visit Store</button>
+          {loading && <p>Loading stores...</p>}
+          {error && <p className="error">{error}</p>}
+
+          {!loading && !error && stores.length === 0 && (
+            <p>No stores available</p>
+          )}
+
+          {!loading &&
+            !error &&
+            stores.map((s) => (
+              <div className="store-card" key={s.id}>
+                <img src={s.banner} alt={s.name} />
+                <div className="store-body">
+                  <h3>{s.name}</h3>
+                  <p>{s.description}</p>
+                  <button
+                    className="btn-orange small"
+                    onClick={() => navigate(`/store/${s.id}`)}
+                  >
+                    ➜ Visit Store
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </section>
 

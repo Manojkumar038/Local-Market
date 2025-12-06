@@ -1,11 +1,22 @@
-/* BASE */
+/* =========================
+   BASE NAVBAR
+========================= */
+
 .nav {
   display: flex;
   align-items: center;
+  height: 56px;
   padding: 10px 14px;
-  background: white;
+  background: #ffffff;
   border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
+
+/* =========================
+   LEFT (LOGO + APP NAME)
+========================= */
 
 .nav-left {
   display: flex;
@@ -14,73 +25,114 @@
 
 .brand {
   display: flex;
-  gap: 6px;
   align-items: center;
+  gap: 8px;
   text-decoration: none;
-  font-weight: 700;
   color: #111;
 }
 
 .brand img {
   width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
+/* App name hidden on mobile by default */
 .app-name {
-  display: none;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline;
 }
+
+/* =========================
+   SEARCH
+========================= */
 
 .nav-search {
   flex: 1;
-  margin-left: 6%;
+  display: flex;
+  justify-content: center;
 }
 
 .nav-search input {
-  width: 90%;
-  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
   padding: 8px 14px;
+  border-radius: 999px;
   border: 1px solid #ddd;
+  font-size: 14px;
 }
 
-.nav-right img {
-  width: 32px;
+/* =========================
+   RIGHT (PROFILE / MENU)
+========================= */
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.avatar-btn {
+  background: #f3f4f6;
+  border: none;
+  padding: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.avatar-btn img {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
 }
 
+/* =========================
+   DROPDOWN MENU
+========================= */
+
 .menu {
   position: absolute;
-  top: 55px;
-  right: 10px;
+  top: 52px;
+  right: 0;
+  min-width: 160px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
   overflow: hidden;
 }
 
 .menu-item {
   padding: 10px 14px;
-  display: block;
+  font-size: 14px;
+  cursor: pointer;
   border: none;
   background: none;
   text-align: left;
+  width: 100%;
 }
 
-/* DESKTOP */
-@media(min-width:768px) {
+.menu-item:hover {
+  background: #f5f5f5;
+}
+
+/* =========================
+   TABLET & DESKTOP
+========================= */
+
+@media (min-width: 768px) {
+
   .nav {
     padding: 12px 5%;
   }
 
+  /* Show app name on bigger screens */
   .app-name {
     display: inline;
   }
 
   .nav-search input {
-    max-width: 450px;
+    max-width: 460px;
   }
-
-  .nav-search {
-    flex: 1;
-    margin-left: 34%;
-  }
-
 }

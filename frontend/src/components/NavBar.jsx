@@ -9,7 +9,7 @@ export default function NavBar({
   menuItems = [],
   showLinks = false,
   links = [],
-  appName = "ShopHub",
+  appName = "Local Market",
   showSearch = false,
   searchValue = "",
   onSearchChange,

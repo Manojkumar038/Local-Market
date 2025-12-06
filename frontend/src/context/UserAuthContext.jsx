@@ -60,7 +60,7 @@ export const UserAuthProvider = ({ children }) => {
     else if (expiryTime instanceof Date) expiry = expiryTime.getTime();
     else if (expiryTime) expiry = Date.parse(expiryTime);
 
-    if (!expiry) expiry = Date.now() + 5 * 60 * 60 * 1000;
+    if (!expiry) expiry = Date.now() + 96 * 60 * 60 * 1000;
 
     localStorage.setItem("userToken", tokenValue);
     localStorage.setItem("expiryTime", String(expiry));

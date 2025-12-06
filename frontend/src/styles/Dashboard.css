@@ -2,7 +2,7 @@
    ROOT WRAPPER (Mobile-first)
 ------------------------------------------- */
 .sd-wrapper {
-  margin-top: 70px;
+  margin-top: 0px;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
   background: #f7f8fb;
   min-height: 100vh;
@@ -61,6 +61,10 @@
 .btn.small {
   padding: 6px 10px;
   font-size: 13px;
+}
+
+.share-button {
+  height: ;
 }
 
 .btn.danger {
@@ -376,23 +380,26 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
+  
 }
 
 .product-media img {
-  width: 100%;
+  width: 90%;
   height: 150px;
   object-fit: contain;
 }
 
 .product-body {
+ 
   padding: 20px;
   height: auto;
+ 
 }
 
 .product-name {
   font-weight: 700;
   font-size: 15px;
-  margin-bottom: 6px;
+  margin-bottom: 6px
 }
 
 .product-meta {
@@ -524,6 +531,8 @@
   .sd-banner {
     height: 160px;
   }
+
+  
 }
 
 /* -------------------------------------------

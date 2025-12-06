@@ -1,0 +1,113 @@
+/* NAVBAR */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+/* LOGO */
+.logo {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* SEARCH BAR */
+.search {
+  width: 40%;
+  max-width: 420px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  outline: none;
+  background: #f7f7f7;
+}
+
+/* ICONS */
+.icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ICON BUTTON */
+.icon-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background .2s ease;
+  width: 50px;
+}
+
+.icon-btn:hover {
+  background: #f0f0f0;
+}
+
+/* ACCOUNT MENU */
+.account-menu-container {
+  position: relative;
+}
+
+/* MENU DROPDOWN */
+.account-menu {
+  position: absolute;
+  top: 38px;
+  right: 0;
+  width: 160px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+  overflow: hidden;
+  z-index: 200;
+}
+
+/* MENU ITEM */
+.menu-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .2s ease;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
+}
+
+.menu-item.logout {
+  color: red;
+  border-top: 1px solid #eee;
+}
+
+
+/* ---------------------- */
+/* RESPONSIVE NAVBAR */
+/* ---------------------- */
+
+@media (max-width: 768px) {
+
+  .search {
+    display: none; /* hide search on mobile for neat UI */
+  }
+
+  .nav {
+    padding: 8px 10px;
+  }
+
+  .icon-btn {
+    font-size: 16px;
+    padding: 6px;
+  }
+
+  .account-menu {
+    right: 0;
+  }
+}
