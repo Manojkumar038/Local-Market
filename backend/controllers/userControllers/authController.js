@@ -1,86 +1,101 @@
-import bcrypt from 'bcryptjs'; 
-import jwt from 'jsonwebtoken'; 
-import mailgun from 'mailgun-js';
-import dotenv from 'dotenv';
-dotenv.config({ path: `.env.development`, quiet: true });
-import PendingUser from '../../models/userTemp.js';
-import User from '../../models/user.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import mailgun from "mailgun-js";
+import PendingUser from "../../models/userTemp.js";
+import User from "../../models/user.js";
 
 
-const mg = mailgun({
-    apiKey: process.env.MAILGUN_API_KEY,
-    domain: process.env.MAILGUN_DOMAIN,
-});
+
+function getMailgun() {
+    if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
+        throw new Error("Mailgun env vars missing");
+    }
+
+    return mailgun({
+        apiKey: process.env.MAILGUN_API_KEY,
+        domain: process.env.MAILGUN_DOMAIN,
+    });
+}
 
 
 export const registerUser = async (req, res) => {
     try {
-
         const { name, email, password } = req.body;
-        const user = await User.findOne({email});
-        if(user) {
-            return res.status(400).json({message: "User already exists..Please Login."});
+        const mg = getMailgun();
+        // Check if user already exists
+        const user = await User.findOne({ email });
+        if (user) {
+            return res
+                .status(400)
+                .json({ message: "User already exists. Please login." });
         }
 
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-        // console.log(`From ${__filename} \n Hashed Password: ` + hashedPassword);
 
+        // Generate verification token
         const token = jwt.sign(
-            {
-                email: email,
-            },
+            { email },
             process.env.SECRET_KEY,
             { expiresIn: "4m" }
         );
-        
-        const pendingUser = new PendingUser({
-            name, email, password: hashedPassword, token
-        });
 
-        await pendingUser.save();
+        // Save pending user
+        await PendingUser.create({
+            name,
+            email,
+            password: hashedPassword,
+            token,
+        });
 
         const magicLink = `${process.env.FRONTEND_URL}/user/verify?token=${token}&type=signup`;
 
+        // Mail options
         const mailOptions = {
-            from: "Verify <noreply@ledger>",
+            from: `LocoMerc <noreply@${process.env.MAILGUN_DOMAIN}>`,
             to: email,
-            subject: "Verify your Identity for entering into the Local Market!!",
-            text: `Click the link to log in:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
+            subject: "Verify your email",
+            text: `Click the link below to verify your account:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
         };
 
+        // Send email
         await mg.messages().send(mailOptions);
 
-        res.status(200).json({message: `A Verification link has been sent to your Mail. Please check.`});
-
+        res.status(200).json({
+            message: "Verification link sent to your email.",
+        });
     } catch (error) {
-        console.log(`Error from ${__filename} \n` + error);
-        res.status(500).json({ message: "An error occured!! Please try again." });
+        console.error("REGISTER USER ERROR:", error);
+        res.status(500).json({
+            message: "Something went wrong. Please try again.",
+        });
     }
-}
+};
 
-
+ 
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({email});
-        
-        if(!user) return res.status(400).json({message: 'User not found. Please signup!!'});
+        const mg = getMailgun();
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res
+                .status(400)
+                .json({ message: "User not found. Please signup." });
+        }
 
-        // console.log(user.password);
+        // Compare password
         const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            return res
+                .status(401)
+                .json({ message: "Invalid password. Try again." });
+        }
 
-        if(!match) return res.status(401).json({message: 'The password is incorrect. Please try again!!'});
-        // console.log(user._id)
+        // Generate login verification token
         const token = jwt.sign(
-            {
-                userId: user._id,
-                email: user.email,
-            },
+            { userId: user._id, email: user.email },
             process.env.SECRET_KEY,
             { expiresIn: "4m" }
         );
@@ -88,18 +103,21 @@ export const loginUser = async (req, res) => {
         const magicLink = `${process.env.FRONTEND_URL}/user/verify?token=${token}&type=login`;
 
         const mailOptions = {
-            from: "Verify <noreply@ledger>",
+            from: `LocoMerc <noreply@${process.env.MAILGUN_DOMAIN}>`,
             to: email,
-            subject: "Verify your Identity for entering into the Local Market!!",
-            text: `Click the link to log in:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
+            subject: "Login verification",
+            text: `Click the link below to verify login:\n\n${magicLink}\n\nThis link expires in 4 minutes.`,
         };
 
         await mg.messages().send(mailOptions);
 
-        res.status(200).json({ message: "A verification link has been sent to your mail. Please verify." });
-
+        res.status(200).json({
+            message: "Login verification link sent to your email.",
+        });
     } catch (error) {
-        console.log(`Error from ${__filename} \n` + error);
-        res.status(500).json({ message: "An error occured!! Please try again." });
+        console.error("LOGIN USER ERROR:", error);
+        res.status(500).json({
+            message: "Something went wrong. Please try again.",
+        });
     }
-}
+};

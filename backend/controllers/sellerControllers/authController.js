@@ -1,20 +1,23 @@
 import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken'; 
 import mailgun from 'mailgun-js';
-import dotenv from 'dotenv';
-dotenv.config({ path: `.env.development`, quiet: true });
 import PendingUser from '../../models/temp.js';
 import Seller from '../../models/seller.js';
 import { fileURLToPath } from 'url';
 
-
 const __filename = fileURLToPath(import.meta.url);
 
 
-const mg = mailgun({
-    apiKey: process.env.MAILGUN_API_KEY,
-    domain: process.env.MAILGUN_DOMAIN,
-});
+function getMailgun() {
+    if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
+        throw new Error("Mailgun env vars missing");
+    }
+
+    return mailgun({
+        apiKey: process.env.MAILGUN_API_KEY,
+        domain: process.env.MAILGUN_DOMAIN,
+    });
+}
 
 
 export const registerUser = async (req, res) => {
@@ -22,6 +25,9 @@ export const registerUser = async (req, res) => {
 
         const { name, email, password } = req.body;
         const seller = await Seller.findOne({email});
+
+        const mg = getMailgun();
+
         if(seller) {
             return res.status(400).json({message: "Seller Exists..Please Login."});
         }
@@ -66,7 +72,10 @@ export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
         const seller = await Seller.findOne({email});
-        
+
+        const mg = getMailgun();
+
+
         if(!seller) return res.status(400).json({message: 'Seller not found. Please signup!!'});
 
         console.log(seller.password);
