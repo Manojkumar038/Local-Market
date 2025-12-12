@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   const expiryFromStorage = localStorage.getItem("expiryTime");
 
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(tokenFromStorage);
+  const [token, setToken] = useState(null);
 
   const logoutTimer = useRef(null);
 
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
       expiry = !Number.isNaN(n) ? n : Date.parse(expiryTime);
     }
 
-    if (!expiry) expiry = Date.now() + 5 * 60 * 60 * 1000;
+    if (!expiry) expiry = Date.now() + 5 * 24 * 60 * 60 * 1000;
 
     localStorage.setItem("token", tokenValue);
     localStorage.setItem("expiryTime", String(expiry));
@@ -72,17 +72,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const expiryTs = parseExpiry(expiryFromStorage);
-    if (tokenFromStorage && expiryTs) {
-      if (Date.now() >= expiryTs) {
+    const storedToken = localStorage.getItem("token");
+    const storedExpiry = parseExpiry(localStorage.getItem("expiryTime"));
+
+    if (storedToken && storedExpiry) {
+      if (Date.now() >= storedExpiry) {
         logout();
       } else {
-        scheduleAutoLogout(expiryTs);
+        setToken(storedToken); 
+        scheduleAutoLogout(storedExpiry);
       }
     }
-    return () => clearLogoutTimer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>

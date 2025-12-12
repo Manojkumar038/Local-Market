@@ -1,17 +1,41 @@
 import React, { useState } from "react";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx"; // SELLER AUTH CONTEXT
 
-export default function AuthPage() {
-  const [mode, setMode] = useState("login"); // 'login' | 'signup'
+export default function LoginAsSeller() {
+  const [mode, setMode] = useState("login");
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const navigate = useNavigate();
 
-  const onGoogleSuccess = (cred) => {
-    // cred contains {credential: <JWT>, select_by: ...}
-    // Send cred.credential (ID token) to backend for verification/exchange
-    console.log("Google success:", cred);
-    // await fetch("/api/auth/google", { method: "POST", body: JSON.stringify({ id_token: cred.credential }) })
+  const { login } = useAuth(); // use seller auth context
+
+  const onGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await axios.post(
+        `${backendUrl}/api/seller/verify-google-login`,
+        {
+          idToken: credentialResponse.credential,
+        }
+      );
+
+      const token = res.data.token;
+      const seller = res.data.user;
+
+      const expiryTime = Date.now() + 5 * 24 * 60 * 60 * 1000; // 5 days
+
+      // Use AuthContext login (NO localStorage manually)
+      login(token, expiryTime);
+
+      navigate("/seller/");
+    } catch (error) {
+      console.error("Google login error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Google login failed. Please try again."
+      );
+    }
   };
 
   const onGoogleError = () => {
@@ -23,45 +47,24 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
-    if (mode === "login") {
-      try {
-        const loginResponse = await axios.post(
-          `${backendUrl}/api/seller/login-seller`,
-          data
-        );
-        
-        console.log("Login response:", loginResponse);
-        alert(loginResponse.data.message);
-      } catch (error) { 
-        console.log("Login error:", error);
-        alert(
-          error.response?.data?.message ||
-            "An error occurred during login. Please try again."
-        );
-      }
-    } else {
-      try {
 
-        const signUpResponse = await axios.post(
-          `${backendUrl}/api/seller/signup`,
-          data
-        );
+    try {
+      const endpoint =
+        mode === "login" ? "/api/seller/login-seller" : "/api/seller/signup";
 
-        console.log("Login response:", signUpResponse);
-        alert(signUpResponse.data.message);
-        
-      } catch (error) {
-        console.log("Login error:", error);
-        alert(
-          error.response?.data?.message ||
-            "An error occurred during signUp. Please try again."
-        );
-      }
+      const response = await axios.post(`${backendUrl}${endpoint}`, data);
+
+      alert(response.data.message);
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          `An error occurred during ${mode}. Please try again.`
+      );
     }
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <>
       <section className="auth">
         <div className="card">
           <h1 className="title">
@@ -70,10 +73,9 @@ export default function AuthPage() {
               : "Create account"}
           </h1>
           <p className="desc">
-            {" "}
             {mode === "login"
               ? `Enter your credentials to access your seller account.`
-              : "One step closer to the local market."}{" "}
+              : "One step closer to the local market."}
           </p>
 
           <form className="form" onSubmit={handleSubmit}>
@@ -138,6 +140,8 @@ export default function AuthPage() {
 
           <div className="oauth">
             <GoogleLogin
+              ux_mode="popup"
+              useFedCM={false}
               onSuccess={onGoogleSuccess}
               onError={onGoogleError}
               useOneTap={false}
@@ -153,40 +157,40 @@ export default function AuthPage() {
         </div>
       </section>
 
+      {/* EXACT SAME CSS – NOT CHANGED */}
       <style>{`
-  .auth {
-    min-height: 100vh;
-    min-width: 100vw;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-
-    background: transparent, #eef2f8;
-    padding: 24px;
-  }
-  .card {
-    width: 100%;
-    max-width: 420px;
-    margin-right: 12%;
-    background: #fff;
-    border-radius: 14px;
-    padding: 22px 22px 16px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
-  }
-  .title {font-size: 22px; font-weight: 600; color: #0f172a;}
-  .desc {margin-bottom: 20px; color: #64748b; font-size: 14px;}
-  .form {display: grid; gap: 12px; margin-top: 8px;}
-  .field {display: grid; gap: 6px;}
-  label {font-size: 16px; color: #1f242cff;}
-  input {padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; outline: none;}
-  input:focus {border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15);}
-  .primary-btn {margin-top: 6px; width: 100%; padding: 10px 12px; background: #2563eb; color: #fff; font-weight: 700; border: 0; border-radius: 10px; cursor: pointer;}
-  .divider {display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; color: #64748b; margin: 14px 0;}
-  .divider::before, .divider::after {content: ""; height: 1px; background: #e2e8f0;}
-  .oauth {display: grid; place-items: center; gap: 10px;}
-  .toggle {margin: 14px 0 0; text-align: center; color: #475569; font-size: 14px;}
-  .link-btn {background: none; border: none; padding: 0; color: #2563eb; font-weight: 700; cursor: pointer;}
-`}</style>
-    </GoogleOAuthProvider>
+        .auth {
+          min-height: 100vh;
+          min-width: 100vw;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          background: transparent, #eef2f8;
+          padding: 24px;
+        }
+        .card {
+          width: 100%;
+          max-width: 420px;
+          margin-right: 12%;
+          background: #fff;
+          border-radius: 14px;
+          padding: 22px 22px 16px;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        }
+        .title {font-size: 22px; font-weight: 600; color: #0f172a;}
+        .desc {margin-bottom: 20px; color: #64748b; font-size: 14px;}
+        .form {display: grid; gap: 12px; margin-top: 8px;}
+        .field {display: grid; gap: 6px;}
+        label {font-size: 16px; color: #1f242cff;}
+        input {padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; outline: none;}
+        input:focus {border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15);}
+        .primary-btn {margin-top: 6px; width: 100%; padding: 10px 12px; background: #2563eb; color: #fff; font-weight: 700; border: 0; border-radius: 10px; cursor: pointer;}
+        .divider {display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; color: #64748b; margin: 14px 0;}
+        .divider::before, .divider::after {content: ""; height: 1px; background: #e2e8f0;}
+        .oauth {display: grid; place-items: center; gap: 10px;}
+        .toggle {margin: 14px 0 0; text-align: center; color: #475569; font-size: 14px;}
+        .link-btn {background: none; border: none; padding: 0; color: #2563eb; font-weight: 700; cursor: pointer;}
+      `}</style>
+    </>
   );
 }

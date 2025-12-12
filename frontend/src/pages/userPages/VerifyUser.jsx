@@ -44,11 +44,14 @@ const VerifyMagicLink = () => {
         const response = await axios.get(endpoint);
         const data = response.data;
 
-        console.log(data)
+        // console.log(data)
 
         if (type === "signup") {
-          alert("Signup verified successfully! Please log in.");
-          navigate("/login");
+          alert("Signup verified successfully.");
+          const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+          login(data.token, data.user || null, expiryTime);
+          navigate("/");
+          window.location.reload();
         } else {
           const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
           login(data.token, data.user || null, expiryTime);

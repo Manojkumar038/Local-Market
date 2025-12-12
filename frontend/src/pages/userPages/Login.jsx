@@ -1,17 +1,41 @@
 // AuthPage.jsx
-import React, { useState } from "react";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useAuth } from "../../context/UserAuthContext.jsx";
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login"); // 'login' | 'signup'
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const { login } = useAuth();
 
-  const onGoogleSuccess = (cred) => {
-    // cred contains {credential: <JWT>, select_by: ...}
-    // Send cred.credential (ID token) to backend for verification/exchange
-    console.log("Google success:", cred);
-    // await fetch("/api/auth/google", { method: "POST", body: JSON.stringify({ id_token: cred.credential }) })
+  const onGoogleSuccess = async (credentialResponse) => {
+    try {
+      // console.log("Google login response:", credentialResponse);
+
+      const res = await axios.post(
+        `${backendUrl}/api/user/verify-google-login`,
+        {
+          idToken: credentialResponse.credential,
+        }
+      );
+
+      // const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+      // localStorage.setItem("userToken", res.data.token);
+      // localStorage.setItem("expiryTime", expiryTime);
+
+      const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+      login(res.data.token, res.data.user || null, expiryTime);
+
+      // Redirect user
+      window.location.href = "/"; 
+    } catch (error) {
+      console.error("Google login error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Google login failed. Please try again."
+      );
+    }
   };
 
   const onGoogleError = () => {
@@ -23,7 +47,7 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
-    console.log(data);
+    // console.log(data);
     if (mode === "login") {
       try {
         const loginResponse = await axios.post(
@@ -31,7 +55,7 @@ export default function AuthPage() {
           data
         );
         
-        console.log("Login response:", loginResponse);
+        // console.log("Login response:", loginResponse);
         alert(loginResponse.data.message);
       } catch (error) { 
         console.log("Login error:", error);
@@ -60,7 +84,7 @@ export default function AuthPage() {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <>
       <section className="auth">
         <div className="card">
           <h1 className="title">
@@ -131,6 +155,8 @@ export default function AuthPage() {
 
           <div className="oauth">
             <GoogleLogin
+              ux_mode="popup"
+              useFedCM={false}
               onSuccess={onGoogleSuccess}
               onError={onGoogleError}
               useOneTap={false}
@@ -163,6 +189,6 @@ export default function AuthPage() {
         .toggle { margin: 14px 0 0; text-align: center; color: #475569; font-size: 14px; }
         .link-btn { background: none; border: none; padding: 0; color: #2563eb; font-weight: 700; cursor: pointer; }
       `}</style>
-    </GoogleOAuthProvider>
+    </>
   );
 }

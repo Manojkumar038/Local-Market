@@ -7,8 +7,6 @@ import axios from 'axios';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
-  const isLoggedIn = !!token;
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef();
   const [stores, setStores] = useState([]);
@@ -16,6 +14,13 @@ export default function Home() {
   const [error, setError] = useState(null);
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  const { token } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState(!!token);
+  
+  useEffect(() => {
+    setIsLoggedIn(!!token);
+  }, [token]);
+  
   useEffect(() => {
     const fetchStores = async () => {
       try {
