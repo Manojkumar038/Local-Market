@@ -4,15 +4,22 @@ import { getStores, getStoreInfo } from '../controllers/userControllers/storeInf
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js'
 import { getProductDetails } from '../controllers/userControllers/storeInfo.js'
+import {
+    signupLimiter,
+    loginLimiter,
+    magicLinkLimiter,
+    googleLoginLimiter,
+} from "../middleware/rateLimitters.js";
+
 
 const router = express.Router();
 
 //Public Routes 
-router.post('/signup', registerUser);
-router.get('/verify-user', verifyUser);
-router.post('/login-user', loginUser);
-router.get('/verify-user-login', verifyLogin);
-router.post('/verify-google-login', verifyGoogleLogin);
+router.post('/signup', signupLimiter, registerUser);
+router.get('/verify-user', magicLinkLimiter, verifyUser);
+router.post('/login-user', loginLimiter, loginUser);
+router.get('/verify-user-login', magicLinkLimiter, verifyLogin);
+router.post('/verify-google-login', googleLoginLimiter, verifyGoogleLogin);
 
 router.get('/get-stores', getStores);
 router.get('/get-store-info', getStoreInfo);

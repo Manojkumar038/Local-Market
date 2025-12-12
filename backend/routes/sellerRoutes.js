@@ -6,7 +6,6 @@ import { authMiddleware } from '../middleware/authMiddleware.js'
 import { createOrUpdateStore } from "../controllers/sellerControllers/storeControllers.js";
 import { deleteCloudinaryImage }  from "../controllers/sellerControllers/cloudStorage.js";
 
-
 const router = express.Router();
 
 // Public Routes

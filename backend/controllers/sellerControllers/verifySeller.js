@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
 import PendingUser from '../../models/temp.js';
 import Seller from '../../models/seller.js';
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import { OAuth2Client } from "google-auth-library";
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 import { fileURLToPath } from 'url';
 
@@ -22,14 +22,24 @@ export const verifyUser = async (req, res) => {
 
         if(!pendingUser) return res.status(400).json({message: 'Request Expired. Please try again.'});
 
-        const seller = new Seller({
-            name: pendingUser.name,
-            email: pendingUser.email,
-            password: pendingUser.password
-        })
+        let seller = await Seller.findOne({ email: pendingUser.email });
+        
+        if (!seller) {
+            seller = new Seller({
+                name: pendingUser.name,
+                email: pendingUser.email,
+                password: pendingUser.password,
+                providers: { local: true },
+            });
+        } else {
+            // Link local auth to existing account (e.g., Google user)
+            seller.password = pendingUser.password;
+            seller.providers.local = true;
+        }
+        
 
-        await seller.save();
         await PendingUser.deleteOne({_id: pendingUser._id});
+        await seller.save();
 
         res.status(200).json({message: 'User verified successfully.'});
 
@@ -50,17 +60,44 @@ export const verifyLogin = async (req, res) => {
 
         if (!decoded) return res.status(400).json({ message: 'Request Expired. Please try again.' });
 
+        const seller = await Seller.findOne({
+            email: decoded.email,
+            loginToken: token,
+            loginTokenExpiry: { $gt: Date.now() },
+        });
+
+        if (!seller) {
+            return res.status(400).json({
+                message: "Login link is invalid or has expired.",
+            });
+        }
+
+        if (!seller.providers?.local) {
+            return res.status(400).json({
+                message: "Use Google login for this account.",
+            });
+        }
+
+        
 
         const loginToken = jwt.sign(
-            { userId: decoded.userId, email: decoded.email },
-            process.env.SECRET_KEY,
+            {
+                userId: seller._id,
+                email: seller.email
+            },
+            process.env.SECRET_KEY ,
+            { expiresIn: "7D" }
         );
+
+        seller.loginToken = null;
+        seller.loginTokenExpiry = null;
+        await seller.save();
 
         res.status(200).json({
             message: 'Login Sucessful.',
             token: loginToken,
-            userId: decoded.userId,
-            email: decoded.email
+            userId: seller._id,
+            email: seller.email
         });
 
 
@@ -74,43 +111,76 @@ export const verifyLogin = async (req, res) => {
 }
 
 export const verifyGoogleLogin = async (req, res) => {
-    const { email, name, picture } = req.body;
 
-    if (!email || !name) {
-        return res.status(400).json({ message: "Email and name are required." });
+    
+    const { idToken } = req.body;
+
+    const client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+    );
+
+
+    if (!idToken) {
+        return res.status(400).json({ message: "Google token is required." });
     }
-
     try {
+
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        
+
+        const payload = ticket.getPayload();
+        const email = payload.email;
+        const name = payload.name;
+        const picture = payload.picture;
+        const emailVerified = payload.email_verified;
+        
+        if (!emailVerified) {
+            return res.status(401).json({ message: "Google email not verified." });
+        }
+            
         let seller = await Seller.findOne({ email });
 
         if (!seller) {
-            const dummyPassword = crypto.randomBytes(32).toString('hex');
-            const hashedPassword = await bcrypt.hash(dummyPassword, 10);
-            seller = new Seller({ name, email, password: hashedPassword });
+            seller = new Seller({
+                name,
+                email,
+                providers: { google: true },
+                picture,
+            });
             await seller.save();
+        } else {
+            if (!seller.providers.google) {
+                seller.providers.google = true;
+                await seller.save(); 
+            }
         }
 
+        
         const token = jwt.sign(
             {
-                email: email,
-                userId: seller._id
+                email: seller.email,
+                userId: seller._id,
             },
             process.env.SECRET_KEY,
+            { expiresIn: "7d" } 
         );
 
         res.json({
             token,
-            seller: {
+            user: {
                 id: seller._id,
                 name: seller.name,
                 email: seller.email,
                 picture: seller.picture || null,
             },
-            message: "Login successful"
+            message: "Google login successful",
         });
-
-    }catch(error) {
-        console.log(`Error from ${__filename} \n` + error);
-        res.status(500).json({ message: "Some Error occurred!! Please try again." });
+    } catch (error) {
+        console.error("Google sign-in errocr:", error);
+        res.status(401).json({ message: "Invalid Google token" });
     }
 }

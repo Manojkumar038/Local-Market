@@ -1,10 +1,11 @@
-import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.development' }); 
+import express from 'express';
 import cors from 'cors';
 import connectDB from './configs/db.js';
 import routes from './routes/index.js';
 import { shareStore } from './controllers/sellerControllers/shareStore.js';
+
 
 const app = express();
 connectDB();

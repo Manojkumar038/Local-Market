@@ -1,20 +1,58 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-    name: {type: String, required: true}, 
-    email: { type: String, required: true, unique: true, match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/},
-    password: {type: String, required: true},
-    phone: { type: String, unique: true, match: /^\+?[0-9]{10,15}$/ },
-    address: {
-        city: {type: String}, 
-        area: {type: String}, 
-        landMark: {type: String}, 
-        district: {type: String},
-        pincode: { type: String, match: /^[0-9]{6}$/}, 
-    }, 
-    resetToken: { type: String },
-    resetTokenExpiry: { type: Date }
-}, {timestamps: true});
+const userSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+        },
 
-export default mongoose.model('User', userSchema);
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
+            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        },
 
+        password: {
+            type: String,
+            required: function () {
+                return this.providers?.local === true;
+            },
+        },
+
+        phone: {
+            type: String,
+        },
+
+        address: {
+            city: String,
+            area: String,
+            landMark: String,
+            district: String,
+            pincode: {
+                type: String,
+                match: /^[0-9]{6}$/,
+            },
+        },
+
+        resetToken: String,
+        resetTokenExpiry: Date,
+
+        loginToken: String,
+        loginTokenExpiry: Date,
+
+        providers: {
+            local: { type: Boolean, default: false },
+            google: { type: Boolean, default: false },
+        },
+
+        picture: String,
+    },
+    { timestamps: true }
+);
+
+export default mongoose.model("User", userSchema);

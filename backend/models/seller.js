@@ -23,7 +23,20 @@ const sellerSchema = new mongoose.Schema({
     numberOfRatings: { type: Number, default: 0 },
 
     description: { type: String },
-    storeCreated: { type: Boolean, default: false } 
+    storeCreated: { type: Boolean, default: false } ,
+
+    resetToken: String,
+    resetTokenExpiry: Date,
+
+    loginToken: String,
+    loginTokenExpiry: Date,
+
+    providers: {
+        local: { type: Boolean, default: false },
+        google: { type: Boolean, default: false },
+    },
+
+    picture: String,
 
 }, { timestamps: true });
 
