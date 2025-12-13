@@ -36,12 +36,12 @@ jobs:
           username: ${{ secrets.LOCOMERC_PROD_EC2_USER }}
           key: ${{ secrets.LOCOMERC_PROD_EC2_SSH_KEY }}
           script: |
-            cd Local-Market
+            cd ~/Local-Market
             git pull origin main
 
             if [ "${{ steps.changes.outputs.backend_changed }}" = "true" ]; then
               echo "Backend changed – Deploying backend..."
-              cd backend
+              cd ~/Local-Market/backend
               npm install
               pm2 reload server
               pm2 restart server
@@ -49,7 +49,7 @@ jobs:
 
             if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
               echo "Frontend changed – Rebuilding and deploying frontend"
-              cd frontend
+              cd ~/Local-Market/frontend
               npm install
               npm run build
               sudo rm -rf /var/www/locomerc/*
