@@ -6,12 +6,15 @@ import connectDB from './configs/db.js';
 import routes from './routes/index.js';
 import { shareStore } from './controllers/sellerControllers/shareStore.js';
 
+
+
+console.log("Backend test from github actions - 1");
+
 const app = express();
 app.set("trust proxy", 1);
 
 connectDB();
 
-console.log("Backend test from github actions - 1");
 
 app.use(cors());
 app.use(express.json());
