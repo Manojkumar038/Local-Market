@@ -6,6 +6,7 @@ import connectDB from './configs/db.js';
 import routes from './routes/index.js';
 import { shareStore } from './controllers/sellerControllers/shareStore.js';
 
+console.log("Testing purspose")
 const app = express();
 
 connectDB();
