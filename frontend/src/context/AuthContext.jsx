@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
       expiry = !Number.isNaN(n) ? n : Date.parse(expiryTime);
     }
 
-    if (!expiry) expiry = Date.now() + 5 * 24 * 60 * 60 * 1000;
+    if (!expiry) expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
     localStorage.setItem("token", tokenValue);
     localStorage.setItem("expiryTime", String(expiry));

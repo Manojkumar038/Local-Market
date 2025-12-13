@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/UserAuthContext.jsx";
 import { useState, useRef, useEffect } from "react";
 import axios from 'axios';
+import Banner from "../../assets/banner.svg";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -224,7 +225,7 @@ export default function Home() {
             !error &&
             stores.map((s) => (
               <div className="store-card" key={s.id}>
-                <img src={s.banner} alt={s.name} />
+                <img src={s.banner || Banner} alt={s.name} />
                 <div className="store-body">
                   <h3>{s.name}</h3>
                   <p>{s.description}</p>
