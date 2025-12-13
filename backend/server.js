@@ -15,7 +15,9 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+
 console.log("Backend test from github actions - 1");
+
 
 app.get('/store/:id', shareStore);
 app.use('/api', routes);
