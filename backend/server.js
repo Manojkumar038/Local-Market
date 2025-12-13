@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 
-console.log("Backend test from github actions - 1");
+console.log("Backend test from github actions - 2");
 
 
 app.get('/store/:id', shareStore);
