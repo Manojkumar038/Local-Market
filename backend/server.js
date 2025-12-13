@@ -7,7 +7,6 @@ import routes from './routes/index.js';
 import { shareStore } from './controllers/sellerControllers/shareStore.js';
 
 const app = express();
-app.set("trust proxy", 1);
 
 connectDB();
 
