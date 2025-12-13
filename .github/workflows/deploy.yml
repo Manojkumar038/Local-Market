@@ -41,20 +41,20 @@ jobs:
           
             cd ~/Local-Market
             git pull origin main
-          
-            if [ "${{ steps.changes.outputs.backend_changed }}" = "true" ]; then
-              echo "Backend changed – Deploying backend..."
-              cd backend
-              npm install
-              pm2 restart server
-            fi
-          
-            if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
-              echo "Frontend changed – Rebuilding and deploying frontend"
-              cd ~/Local-Market/frontend
-              npm install
-              npm run build
-              sudo rm -rf /var/www/locomerc/*
-              sudo cp -r dist/* /var/www/locomerc/
-            fi
 
+            echo "Installing backend dependencies"
+            cd backend
+            npm install
+
+            echo "Restarting backend"
+            pm2 reload server
+            pm2 restart server
+
+            echo "Building frontend"
+            cd ~/Local-Market/frontend
+            npm install
+            npm run build
+
+            echo "Deploying frontend"
+            sudo rm -rf /var/www/locomerc/*
+            sudo cp -r dist/* /var/www/locomerc/
