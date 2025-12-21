@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/UserAuthContext.jsx";
 import { useState, useRef, useEffect } from "react";
 import axios from 'axios';
-import Banner from "../../assets/banner.svg";
+import Banner from "../../assets/banner.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -184,8 +184,8 @@ export default function Home() {
       {/* CATEGORIES */}
       <section className="block">
         <div className="section-head">
-          <div>
-            <h2>Shop by Category</h2>
+          <div> 
+            <h2>Categories</h2>
             <p>Explore our curated selection of product categories</p>
           </div>
           <button className="light-btn">View All</button>

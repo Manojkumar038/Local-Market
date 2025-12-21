@@ -6,17 +6,12 @@ import connectDB from './configs/db.js';
 import routes from './routes/index.js';
 import { shareStore } from './controllers/sellerControllers/shareStore.js';
 
-console.log("Testing purspose")
 const app = express();
 
 connectDB();
 
-
 app.use(cors());
 app.use(express.json());
-
-
-console.log("Backend test from github actions - 2");
 
 
 app.get('/store/:id', shareStore);
