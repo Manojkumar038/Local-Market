@@ -115,6 +115,24 @@ export default function LoginAsSeller() {
               />
             </div>
 
+            {mode === "login" && (
+              <p
+                style={{
+                  textAlign: "right",
+                  marginTop: "4px",
+                  marginRight: "8px",
+                }}
+              >
+                <a
+                  href="/forgot-password"
+                  className="link-btn"
+                  style={{ textDecoration: "none" }}
+                >
+                  Forgot password?
+                </a>
+              </p>
+            )}
+
             {mode === "signup" && (
               <div className="field">
                 <label htmlFor="confirm">Confirm password</label>

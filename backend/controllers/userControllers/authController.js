@@ -72,7 +72,7 @@ export const registerUser = async (req, res) => {
             to: email,
             subject: "Verify your emial to enter locomerc",
             html: `
-                <p>Hi, ${user.name} </p>
+                <p>Hi, ${name} </p>
 
                 <p>Thanks for signing up at <strong>Locomerc</strong>.  
                 Please click the button below to verify your account:</p>
@@ -91,11 +91,12 @@ export const registerUser = async (req, res) => {
                 `,
         });
 
-        console.log("Log from registeration from authController" + response);
+        // console.log("Log from registeration from authController" + response);
 
         res.status(200).json({
             message: "Verification link sent to your email.",
         });
+        
     } catch (error) {
         console.error("REGISTER USER ERROR:", error);
         res.status(500).json({

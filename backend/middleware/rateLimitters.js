@@ -21,6 +21,13 @@ export const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+export const forgotPasswordLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 20,
+    message: "Too many attempts. Please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
  // Magic link verification abuse protection
  
