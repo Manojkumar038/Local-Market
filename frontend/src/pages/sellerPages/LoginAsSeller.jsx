@@ -3,6 +3,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx"; // SELLER AUTH CONTEXT
+import { Link } from "react-router-dom";
+
 
 export default function LoginAsSeller() {
   const [mode, setMode] = useState("login");
@@ -123,13 +125,13 @@ export default function LoginAsSeller() {
                   marginRight: "8px",
                 }}
               >
-                <a
-                  href="/forgot-password"
+                <Link
+                  to="/seller/forgot-password"
                   className="link-btn"
                   style={{ textDecoration: "none" }}
                 >
                   Forgot password?
-                </a>
+                </Link>
               </p>
             )}
 

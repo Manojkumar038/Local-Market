@@ -8,7 +8,8 @@ import ProtectRoutes from "../pages/sellerPages/ProtectRoutes.jsx";
 import CreateStore from "../pages/sellerPages/CreateStore.jsx";
 import SellerSettings from "../pages/sellerPages/Settings.jsx"
 import SellerProductDetails from "../pages/sellerPages/ProductDetails.jsx";
-
+import ForgotPassword from "../pages/sellerPages/ForgotPassword.jsx";
+import ResetPassword from "../pages/sellerPages/ResetPassword.jsx";
 
 export default function SellerRoutes() {
   return (
@@ -27,6 +28,8 @@ export default function SellerRoutes() {
 
       <Route path="login" element={<LoginAsSeller />} />
       <Route path="verify" element={<VerifySeller />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
     </Routes>
   );
 }
