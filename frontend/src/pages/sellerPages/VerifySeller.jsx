@@ -38,8 +38,7 @@ const VerifyMagicLink = () => {
           navigate("/seller/login");
         } else {
           // Login verified → Set session
-          const now = new Date().getTime();
-          const expiryTime = new Date(now + 5 * 60 * 60 * 1000);
+          const expiryTime = Date.now() + 24 * 7 * 60 * 60 * 1000;
           login(data.token, expiryTime);
           navigate("/seller/");
         }

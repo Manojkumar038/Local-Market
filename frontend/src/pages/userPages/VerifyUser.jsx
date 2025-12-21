@@ -47,11 +47,8 @@ const VerifyMagicLink = () => {
         // console.log(data)
 
         if (type === "signup") {
-          alert("Signup verified successfully.");
-          const expiryTime = Date.now() + 24 * 7 * 60 * 60 * 1000;
-          login(data.token, data.user || null, expiryTime);
+          alert("Signup verified successfully. Please login to continue.");
           navigate("/");
-          window.location.reload();
         } else {
           const expiryTime = Date.now() + 24 * 7 * 60 * 60 * 1000;
           login(data.token, data.user || null, expiryTime);

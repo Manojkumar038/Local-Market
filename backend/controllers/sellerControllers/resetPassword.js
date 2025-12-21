@@ -25,7 +25,7 @@ export const forgotPassword = async (req, res) => {
 
         await seller.save();
 
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const resetUrl = `${process.env.FRONTEND_URL}/seller/reset-password?token=${resetToken}`;
 
         const response = await resend.emails.send({
             from: "Locomerc <noreply@locomerc.store>",

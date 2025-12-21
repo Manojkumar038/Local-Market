@@ -41,7 +41,7 @@ export default function ResetPassword() {
 
         {done ? (
           <p>
-            Password reset successful. <a href="/login">Log in</a>
+            Password reset successful. <a href="/seller/login">Log in</a>
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="form">
