@@ -24,7 +24,7 @@ export default function AuthPage() {
       // localStorage.setItem("userToken", res.data.token);
       // localStorage.setItem("expiryTime", expiryTime);
 
-      const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+      const expiryTime = Date.now() + 7 * 24 * 60 * 60 * 1000;
       login(res.data.token, res.data.user || null, expiryTime);
 
       // Redirect user

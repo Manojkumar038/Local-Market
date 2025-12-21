@@ -48,12 +48,12 @@ const VerifyMagicLink = () => {
 
         if (type === "signup") {
           alert("Signup verified successfully.");
-          const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+          const expiryTime = Date.now() + 24 * 7 * 60 * 60 * 1000;
           login(data.token, data.user || null, expiryTime);
           navigate("/");
           window.location.reload();
         } else {
-          const expiryTime = Date.now() + 5 * 60 * 60 * 1000;
+          const expiryTime = Date.now() + 24 * 7 * 60 * 60 * 1000;
           login(data.token, data.user || null, expiryTime);
 
           const redirectPath = localStorage.getItem("redirectAfterLogin");
