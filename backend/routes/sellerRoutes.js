@@ -5,29 +5,41 @@ import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js'
 import { createOrUpdateStore } from "../controllers/sellerControllers/storeControllers.js";
 import { deleteCloudinaryImage }  from "../controllers/sellerControllers/cloudStorage.js";
+import { forgotPassword, resetPassword } from '../controllers/sellerControllers/resetPassword.js';
+import {
+    signupLimiter,
+    loginLimiter,
+    magicLinkLimiter,
+    googleLoginLimiter,
+    forgotPasswordLimiter
+} from "../middleware/rateLimitters.js";
+
+
 
 const router = express.Router();
 
 // Public Routes
-router.post('/signup', registerUser);
-router.get('/verify-seller', verifyUser);
-router.post('/login-seller', loginUser);
-router.get('/verify-seller-login', verifyLogin);
-router.post('/verify-google-login', verifyGoogleLogin);
+router.get('/verify-seller', magicLinkLimiter, verifyUser);
+router.get('/verify-seller-login', magicLinkLimiter, verifyLogin);
+
+router.post('/signup', signupLimiter, registerUser);
+router.post('/login-seller', loginLimiter, loginUser);
+router.post('/verify-google-login', googleLoginLimiter, verifyGoogleLogin);
+router.post('/forgot-password', forgotPasswordLimiter, forgotPassword);
+router.post('/reset-password', forgotPasswordLimiter, resetPassword);
 
 // Protected Routes
 router.use(authMiddleware);
-
-router.post('/add-product', addProduct);
-router.post('/delete-product', deleteProduct);
-router.put('/update-product', updateProduct);
-router.post("/delete-cloudinary-image", deleteCloudinaryImage);
-
 
 router.get('/get-product-details/:productId', getProductDetails);
 router.get('/get-all-products', getAllProducts);
 router.get('/get-seller-info', getSeller);
 
+router.post('/add-product', addProduct);
+router.post('/delete-product', deleteProduct);
+router.post("/delete-cloudinary-image", deleteCloudinaryImage);
+
+router.put('/update-product', updateProduct);
 router.put("/create-store", createOrUpdateStore);
 
 export default router;

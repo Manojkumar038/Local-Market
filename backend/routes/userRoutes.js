@@ -9,22 +9,24 @@ import {
     loginLimiter,
     magicLinkLimiter,
     googleLoginLimiter,
+    forgotPasswordLimiter
 } from "../middleware/rateLimitters.js";
-
+import { forgotPassword, resetPassword } from '../controllers/userControllers/resetPassword.js';
 
 const router = express.Router();
 
 //Public Routes 
 router.post('/signup', signupLimiter, registerUser);
-router.get('/verify-user', magicLinkLimiter, verifyUser);
 router.post('/login-user', loginLimiter, loginUser);
-router.get('/verify-user-login', magicLinkLimiter, verifyLogin);
 router.post('/verify-google-login', googleLoginLimiter, verifyGoogleLogin);
+router.post('/forgot-password', forgotPasswordLimiter, forgotPassword);
+router.post('/reset-password', forgotPasswordLimiter, resetPassword);
 
+router.get('/verify-user-login', magicLinkLimiter, verifyLogin);
+router.get('/verify-user', magicLinkLimiter, verifyUser);
 router.get('/get-stores', getStores);
 router.get('/get-store-info', getStoreInfo);
 router.get('/get-product-info/:productId', getProductDetails);
-
 
 //Protected Routes
 router.use(authMiddleware);
