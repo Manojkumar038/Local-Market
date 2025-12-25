@@ -1,218 +1,155 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../../styles/UserStyles/StorePage.css";
-import { useNavigate } from "react-router-dom";
-
+import Banner from "../../assets/banner.png";
 
 export default function StorePage() {
   const { id } = useParams();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
+
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // UI state
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
-  const [maxPrice, setMaxPrice] = useState(200000);
-  const [showFilters, setShowFilters] = useState(false);
 
-  const filtersRef = useRef(null);
-  const toggleRef = useRef(null);
-
-  // Fetch store + products
   useEffect(() => {
-    const fetchStoreInfo = async () => {
+    const fetchStore = async () => {
       try {
         const res = await axios.get(`${backendUrl}/api/user/get-store-info`, {
           params: { id },
         });
         setStore(res.data.store);
         setProducts(res.data.products || []);
-      } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.message || "Failed to load store");
+      } catch {
+        setError("Failed to load store");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchStoreInfo();
+    fetchStore();
   }, [id, backendUrl]);
 
-  // Close filters when clicking outside
-  useEffect(() => {
-    const closeOnOutside = (e) => {
-      if (
-        showFilters &&
-        !filtersRef.current?.contains(e.target) &&
-        !toggleRef.current?.contains(e.target)
-      ) {
-        setShowFilters(false);
-      }
-    };
-
-    document.addEventListener("mousedown", closeOnOutside);
-    return () => document.removeEventListener("mousedown", closeOnOutside);
-  }, [showFilters]);
-
-  // Filtering logic
   const filteredProducts = useMemo(() => {
-    let list = [...products];
+    if (!search.trim()) return products;
+    return products.filter((p) =>
+      p.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [products, search]);
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q));
-    }
-
-    list = list.filter((p) => Number(p.price) <= Number(maxPrice));
-
-    if (sortBy === "priceLow") list.sort((a, b) => a.price - b.price);
-    if (sortBy === "priceHigh") list.sort((a, b) => b.price - a.price);
-
-    return list;
-  }, [products, search, sortBy, maxPrice]);
-
-  if (loading) return <div className="store-page center">Loading store…</div>;
-  if (error) return <div className="store-page center error">{error}</div>;
-  if (!store) return <div className="store-page center">Store not found</div>;
+  if (loading) return <div className="p-6 text-center">Loading…</div>;
+  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
+  if (!store) return <div className="p-6 text-center">Store not found</div>;
 
   return (
-    <div className="store-page">
-      {/* HERO */}
-      <header
-        className="store-hero"
-        style={{ backgroundImage: `url(${store.banner})` }}
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      {/* ================= MOBILE HERO ================= */}
+      <div
+        className="md:hidden h-48 bg-cover bg-center relative"
+        style={{ backgroundImage: `url(${store.banner || Banner})` }}
       >
-        <div className="store-hero-overlay">
-          <div className="store-hero-text">
-            <p className="store-breadcrumb">
+        <div className="absolute inset-0 bg-black/50 flex items-end">
+          <div className="p-4 text-white">
+            <p className="text-xs opacity-80">
               Products · {filteredProducts.length} items
             </p>
-            <h1>{store.name}</h1>
-            <p className="store-tagline">{store.description}</p>
+            <h1 className="text-xl font-semibold">{store.name}</h1>
+            <p className="text-sm opacity-90">{store.description}</p>
           </div>
         </div>
-      </header>
-
-      {/* MAIN */}
-      <div className="store-main">
-        {/* SEARCH + FILTER BUTTON */}
-        <div className="store-main-top">
-          <input
-            className="store-search"
-            placeholder="Search in this store..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button
-            ref={toggleRef}
-            className="store-filter-toggle"
-            onClick={() => setShowFilters((p) => !p)}
-          >
-            ☰ Filters
-          </button>
-
-          {/* FILTER MENU */}
-          <aside
-            ref={filtersRef}
-            className={
-              "store-filters " +
-              (showFilters ? "store-filters--mobile-open" : "")
-            }
-          >
-            <div className="filters-section">
-              <h3>Sort by</h3>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="featured">Featured</option>
-                <option value="priceLow">Price: Low to High</option>
-                <option value="priceHigh">Price: High to Low</option>
-              </select>
-            </div>
-
-            <div className="filters-section">
-              <h3>Price Range</h3>
-              <div className="price-range-label">
-                <span>₹0</span>
-                <span>₹{maxPrice}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="200000"
-                step="500"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-              />
-            </div>
-
-            <button
-              className="filters-clear"
-              onClick={() => {
-                setSearch("");
-                setSortBy("featured");
-                setMaxPrice(200000);
-                setShowFilters(false);
-              }}
-            >
-              Clear Filters
-            </button>
-          </aside>
-        </div>
-
-        {/* PRODUCTS */}
-        <main className="store-products">
-          <div className="store-products-header">
-            <h2>Products</h2>
-            <span className="items-count">{filteredProducts.length} items</span>
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <p className="empty-text">No products found</p>
-          ) : (
-            <div className="products-grid">
-              {filteredProducts.map((p) => (
-                <article
-                  className="product-card"
-                  style={{cursor: "pointer"}}
-                  key={p._id}
-                  onClick={() => navigate(`/product/${p._id}`)}
-                  
-                >
-                  <button className="product-wishlist">♡</button>
-
-                  <img src={p.coverPhoto || p.images?.[0]} alt={p.name} />
-
-                  <div className="product-info">
-                    <h3>{p.name}</h3>
-                    <div className="product-price">₹{p.price}</div>
-
-                    {p.stock === 0 ? (
-                      <button className="product-cart-btn disabled">
-                        Out of Stock
-                      </button>
-                    ) : (
-                      <button className="product-cart-btn">Add to Cart</button>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </main>
       </div>
 
-      {/* FOOTER */}
-      <footer>
-        <div>About · Privacy · Terms · Contact</div>
-        <div>© 2025 Local Market. All rights reserved.</div>
+      {/* ================= MAIN CONTENT ================= */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
+          {/* ===== LEFT PANEL (DESKTOP STORE INFO) ===== */}
+          <aside className="hidden md:block bg-white rounded-xl p-6 h-fit sticky top-6">
+            <img
+              src={store.banner || Banner}
+              alt={store.name}
+              className="w-full aspect-[4/3] object-cover rounded-lg mb-4"
+            />
+
+            <p className="text-xs text-gray-500 mb-1">
+              Products · {filteredProducts.length}
+            </p>
+            <h1 className="text-2xl font-semibold mb-2">{store.name}</h1>
+            <p className="text-sm text-gray-600">{store.description}</p>
+          </aside>
+
+          {/* ===== RIGHT PANEL (PRODUCTS) ===== */}
+          <section>
+            {/* SEARCH */}
+            <div className="p-4 rounded-xl flex gap-3 mb-6">
+              <input
+                className="flex-1 border rounded-lg px-4 py-2 text-sm"
+                placeholder="Search in this store…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                Filters
+              </button>
+            </div>
+
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Products</h2>
+              <span className="text-sm text-gray-500">
+                {filteredProducts.length} items
+              </span>
+            </div>
+
+            {/* GRID */}
+            {filteredProducts.length === 0 ? (
+              <p className="text-center text-gray-500">No products found</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredProducts.map((p) => (
+                  <div
+                    key={p._id}
+                    onClick={() => navigate(`/product/${p._id}`)}
+                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer"
+                  >
+                    {/* IMAGE (FIXED RATIO) */}
+                    <div className="w-full aspect-square bg-gray-50">
+                      <img
+                        src={p.coverPhoto || p.images?.[0]}
+                        alt={p.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    {/* INFO */}
+                    <div className="p-4 space-y-2">
+                      <h3 className="text-sm font-medium line-clamp-2">
+                        {p.name}
+                      </h3>
+                      <p className="font-semibold">₹{p.price}</p>
+
+                      <button
+                        disabled={p.stock === 0}
+                        className={`w-full text-sm py-2 rounded-lg ${
+                          p.stock === 0
+                            ? "bg-gray-300 text-gray-600"
+                            : "bg-black text-white"
+                        }`}
+                      >
+                        {p.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* ================= FOOTER (STICKS BOTTOM) ================= */}
+      <footer className="mt-auto py-6 text-center text-sm text-gray-500 bg-white">
+        About · Privacy · Terms · Contact <span></span>© 2025 Local Market
       </footer>
     </div>
   );

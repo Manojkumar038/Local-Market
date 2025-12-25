@@ -1,8 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   font-family: 'Inter', sans-serif;
 }
-
-
 
 .roboto-font {
   font-family: "Roboto", sans-serif;
@@ -22,8 +24,6 @@ html, body {
   overflow-x: hidden !important;
   width: 100%;
 }
-
-
 
 /* keep the rest */
 body {
